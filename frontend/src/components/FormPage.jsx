@@ -8,25 +8,47 @@ const API_BASE_URL = 'http://localhost:8000'
 
 const FormPage = () => {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
-    businessName: '',
-    city: '',
-    country: '',
-    targetAudience: '',
-    budget: '',
-    businessType: '',
-    rawIdea: '',
-    problem: '',
-    fileAttachments: [],
-    model: 'chatgpt-latest',
-    timeCommitment: '',
-    outputTone: '',
-    language: '',
-    stageOfIdea: '',
-    timeHorizon: ''
-  })
+  
+  // Load saved form data from localStorage or use defaults
+  const loadSavedFormData = () => {
+    const saved = localStorage.getItem('raw2ready_formData')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Don't restore file attachments from localStorage
+        return { ...parsed, fileAttachments: [] }
+      } catch (e) {
+        console.error('Error loading saved form data:', e)
+      }
+    }
+    return {
+      businessName: '',
+      city: '',
+      country: '',
+      targetAudience: '',
+      budget: '',
+      businessType: '',
+      rawIdea: '',
+      problem: '',
+      fileAttachments: [],
+      model: 'chatgpt-latest',
+      timeCommitment: '',
+      outputTone: '',
+      language: '',
+      stageOfIdea: '',
+      timeHorizon: ''
+    }
+  }
 
-  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [formData, setFormData] = useState(loadSavedFormData)
+
+  // Load saved terms acceptance
+  const loadSavedTerms = () => {
+    const saved = localStorage.getItem('raw2ready_termsAccepted')
+    return saved === 'true'
+  }
+
+  const [termsAccepted, setTermsAccepted] = useState(loadSavedTerms)
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState(null)
@@ -39,19 +61,31 @@ const FormPage = () => {
     const { name, value, files } = e.target
     if (files) {
       const fileArray = Array.from(files)
-      setFormData(prev => ({
-        ...prev,
-        [name]: [...prev[name], ...fileArray]
-      }))
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          [name]: [...prev[name], ...fileArray]
+        }
+        // Save to localStorage (without files)
+        const { fileAttachments, ...dataToSave } = updated
+        localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
+        return updated
+      })
       // Clear the input value so it doesn't show the filename
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }))
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          [name]: value
+        }
+        // Save to localStorage (without files)
+        const { fileAttachments, ...dataToSave } = updated
+        localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
+        return updated
+      })
       
       // Handle country autocomplete
       if (name === 'country') {
@@ -72,10 +106,16 @@ const FormPage = () => {
   }
 
   const handleCountrySelect = (country) => {
-    setFormData(prev => ({
-      ...prev,
-      country: country
-    }))
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        country: country
+      }
+      // Save to localStorage
+      const { fileAttachments, ...dataToSave } = updated
+      localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
+      return updated
+    })
     setShowCountryDropdown(false)
     setFilteredCountries(countries)
   }
@@ -115,6 +155,7 @@ const FormPage = () => {
     const newErrors = {}
 
     if (!formData.country.trim()) newErrors.country = 'Country is required'
+    if (!formData.city.trim()) newErrors.city = 'City is required'
     if (!formData.rawIdea.trim()) newErrors.rawIdea = 'Raw idea is required'
     if (!formData.timeCommitment) newErrors.timeCommitment = 'Time commitment is required'
     if (!termsAccepted) newErrors.terms = 'You must accept the terms and conditions'
@@ -148,6 +189,9 @@ const FormPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) return
+    
+    // Clear saved form data on successful submission
+    localStorage.removeItem('raw2ready_formData')
 
     setIsLoading(true)
     setApiError(null)
@@ -193,6 +237,10 @@ const FormPage = () => {
         business_type: formData.businessType || null,
       }
 
+      // Clear saved form data on successful submission
+      localStorage.removeItem('raw2ready_formData')
+      localStorage.removeItem('raw2ready_termsAccepted')
+      
       navigate('/results', {
         state: {
           analysisData,
@@ -276,7 +324,7 @@ const FormPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="city">City</label>
+              <label htmlFor="city">City <span className="required">*</span></label>
               <input
                 type="text"
                 id="city"
@@ -284,7 +332,7 @@ const FormPage = () => {
                 value={formData.city}
                 onChange={handleChange}
                 placeholder="Enter city"
-                className="form-input"
+                className={`form-input ${errors.city ? 'error' : ''}`}
               />
             </div>
 
@@ -513,7 +561,9 @@ const FormPage = () => {
                 type="checkbox"
                 checked={termsAccepted}
                 onChange={(e) => {
-                  setTermsAccepted(e.target.checked)
+                  const value = e.target.checked
+                  setTermsAccepted(value)
+                  localStorage.setItem('raw2ready_termsAccepted', value.toString())
                   if (errors.terms) {
                     setErrors(prev => ({
                       ...prev,

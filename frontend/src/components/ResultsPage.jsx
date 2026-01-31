@@ -53,12 +53,19 @@ const ResultsPage = () => {
     )
   }
 
+  const handleBack = () => {
+    navigate('/form')
+  }
+
   return (
     <div 
       className={`results-page ${expandedCard ? 'has-expanded' : ''}`}
       onClick={handleOverlayClick}
     >
       <div className="results-container">
+        <button onClick={handleBack} className="back-button">
+          ← Back
+        </button>
         <h1 className="results-title">Your Business Analysis</h1>
         <p className="results-subtitle">Here's your comprehensive business proposal breakdown</p>
 
@@ -134,10 +141,10 @@ const ResultsPage = () => {
           </div>
         </div>
 
-        {/* Create Presentation Button */}
+        {/* Next Button */}
         <div className="next-button-container">
           <button 
-            className="next-button create-presentation-btn" 
+            className="next-button" 
             onClick={() => navigate('/presentation', { 
               state: { 
                 businessContext: {
@@ -149,7 +156,7 @@ const ResultsPage = () => {
               } 
             })}
           >
-            Create Presentation →
+            Next →
           </button>
         </div>
       </div>
