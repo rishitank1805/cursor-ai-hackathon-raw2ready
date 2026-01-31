@@ -1,7 +1,10 @@
 import React, { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { countries } from '../utils/countries'
 import './FormPage.css'
 
 const FormPage = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     businessName: '',
     city: '',
@@ -22,7 +25,10 @@ const FormPage = () => {
 
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [errors, setErrors] = useState({})
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
+  const [filteredCountries, setFilteredCountries] = useState(countries)
   const fileInputRef = useRef(null)
+  const countryInputRef = useRef(null)
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -41,6 +47,15 @@ const FormPage = () => {
         ...prev,
         [name]: value
       }))
+      
+      // Handle country autocomplete
+      if (name === 'country') {
+        const filtered = countries.filter(country =>
+          country.toLowerCase().includes(value.toLowerCase())
+        )
+        setFilteredCountries(filtered)
+        setShowCountryDropdown(value.length > 0 && filtered.length > 0)
+      }
     }
     // Clear error when user starts typing
     if (errors[name]) {
@@ -49,6 +64,35 @@ const FormPage = () => {
         [name]: ''
       }))
     }
+  }
+
+  const handleCountrySelect = (country) => {
+    setFormData(prev => ({
+      ...prev,
+      country: country
+    }))
+    setShowCountryDropdown(false)
+    setFilteredCountries(countries)
+  }
+
+  const handleCountryFocus = () => {
+    if (formData.country) {
+      const filtered = countries.filter(country =>
+        country.toLowerCase().includes(formData.country.toLowerCase())
+      )
+      setFilteredCountries(filtered)
+      setShowCountryDropdown(filtered.length > 0)
+    } else {
+      setFilteredCountries(countries)
+      setShowCountryDropdown(true)
+    }
+  }
+
+  const handleCountryBlur = () => {
+    // Delay to allow click on dropdown item
+    setTimeout(() => {
+      setShowCountryDropdown(false)
+    }, 200)
   }
 
   const handleRemoveFile = (index) => {
@@ -78,13 +122,21 @@ const FormPage = () => {
     e.preventDefault()
     if (validateForm()) {
       console.log('Form submitted:', formData)
-      // Handle form submission here
+      // Navigate to results page
+      navigate('/results')
     }
+  }
+
+  const handleBack = () => {
+    navigate('/')
   }
 
   return (
     <div className="form-page">
       <div className="form-container">
+        <button onClick={handleBack} className="back-button">
+          ← Back
+        </button>
         <h1 className="form-title">Tell Us About Your Business</h1>
         <p className="form-subtitle">Fill in the details to get started</p>
 
@@ -104,7 +156,46 @@ const FormPage = () => {
               />
             </div>
 
-            {/* Location - City & Country */}
+            {/* Location - Country & City */}
+            <div className="form-group">
+              <label htmlFor="country">Country <span className="required">*</span></label>
+              <div className="country-input-wrapper">
+                <input
+                  ref={countryInputRef}
+                  type="text"
+                  id="country"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  onFocus={handleCountryFocus}
+                  onBlur={handleCountryBlur}
+                  placeholder="Type to search country..."
+                  className={`form-input ${errors.country ? 'error' : ''}`}
+                  autoComplete="off"
+                />
+                {showCountryDropdown && filteredCountries.length > 0 && (
+                  <div className="country-dropdown">
+                    {filteredCountries.slice(0, 10).map((country, index) => (
+                      <div
+                        key={index}
+                        className="country-dropdown-item"
+                        onClick={() => handleCountrySelect(country)}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        {country}
+                      </div>
+                    ))}
+                    {filteredCountries.length > 10 && (
+                      <div className="country-dropdown-more">
+                        +{filteredCountries.length - 10} more
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {errors.country && <span className="error-message">{errors.country}</span>}
+            </div>
+
             <div className="form-group">
               <label htmlFor="city">City</label>
               <input
@@ -116,20 +207,6 @@ const FormPage = () => {
                 placeholder="Enter city"
                 className="form-input"
               />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="country">Country <span className="required">*</span></label>
-              <input
-                type="text"
-                id="country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                placeholder="Enter country"
-                className={`form-input ${errors.country ? 'error' : ''}`}
-              />
-              {errors.country && <span className="error-message">{errors.country}</span>}
             </div>
 
             {/* Target Audience */}
@@ -374,7 +451,7 @@ const FormPage = () => {
 
           {/* Submit Button */}
           <button type="submit" className="submit-button">
-            Continue
+            Submit
           </button>
         </form>
       </div>
