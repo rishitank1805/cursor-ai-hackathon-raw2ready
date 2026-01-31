@@ -24,8 +24,34 @@ def build_prompt(
     file_content = file_content or input_data.file_content
     photos_description = photos_description or input_data.photos_description
 
-    # Main prompt using user's exact format
-    prompt = f"""I want to start a business named {input_data.business_name} near {input_data.location_city} in {input_data.country} give me the top 3 competitors in {input_data.location_city}, if there is no competitor in {input_data.location_city} then i need near by regions. The idea is {input_data.raw_idea}."""
+    # Main prompt using user's exact format with emphasis on accuracy
+    prompt = f"""I want to start a business named {input_data.business_name} near {input_data.location_city} in {input_data.country}.
+
+CRITICAL REQUIREMENTS - READ CAREFULLY:
+1. You MUST search for and provide ONLY real, currently operating businesses in {input_data.location_city}, {input_data.country}
+2. Use your knowledge of ACTUAL businesses - if you're not certain a business exists, DO NOT include it
+3. Prioritize well-known, established businesses that you can verify
+4. Include ONLY businesses that match the business type: {input_data.raw_idea}
+5. DO NOT make up business names, addresses, or URLs
+6. If you cannot find 3 verified competitors in {input_data.location_city}, include fewer competitors rather than inventing fake ones
+
+Task: Give me the top 3 REAL, VERIFIED competitors currently operating in {input_data.location_city} for: {input_data.raw_idea}
+
+For each competitor, you MUST provide:
+- Real business name (that you can verify exists)
+- Actual physical address or specific neighborhood/area in {input_data.location_city}
+- Real website URL (only if you know it exists, otherwise leave empty)
+- Estimated annual revenue (only if publicly known, otherwise state "Not publicly available")
+- Year established (only if you know it, otherwise state "Unknown")
+
+VERIFICATION CHECKLIST before including any business:
+✓ Is this a real business I know exists?
+✓ Is it currently operating (not closed)?
+✓ Is it actually located in {input_data.location_city}?
+✓ Does it match the business type: {input_data.raw_idea}?
+✓ Can I provide a real address or specific area?
+
+If you cannot confidently answer YES to all these questions, DO NOT include that business."""
 
     # Add optional context if provided
     additional_context = []
@@ -59,11 +85,13 @@ You MUST respond with a valid JSON object (no markdown, no code blocks) with exa
 {{
   "competing_players": [
     {{
-      "name": "Competitor Name",
+      "name": "Real Business Name (must be verifiable)",
       "description": "One short sentence (max 15 words).",
-      "location": "Address or area in {input_data.location_city}",
-      "url": "https://website-if-known-else-empty-string",
-      "strengths": ["strength1", "strength2"]
+      "location": "Specific address or neighborhood in {input_data.location_city}",
+      "url": "https://actual-website-url-or-empty-string",
+      "strengths": ["strength1", "strength2"],
+      "annual_revenue": "Estimated annual revenue (e.g., $2M-5M) or 'Not publicly available'",
+      "year_established": "Year founded (e.g., 2015) or 'Unknown'"
     }}
   ],
   "market_cap_or_target_revenue": "Estimated market cap or target revenue for this business in the region",
@@ -72,12 +100,24 @@ You MUST respond with a valid JSON object (no markdown, no code blocks) with exa
   "undiscovered_addons": ["Add-on idea 1", "Add-on idea 2", "Add-on idea 3"]
 }}
 
-Instructions:
-1. competing_players: List top 3 competitors in {input_data.location_city}. If fewer than 3 exist in the city, include competitors from nearby regions. Include name, short description (max 15 words), location (address/area), url (website if known, else empty string), and 1-3 strength tags.
-2. market_cap_or_target_revenue: One sentence estimate for this business type in the region.
-3. major_vicinity_locations: 3-5 locations near {input_data.location_city} (neighborhoods, districts, landmarks).
-4. target_audience: 3-5 audience segments (short labels).
-5. undiscovered_addons: 3-5 add-on ideas (short phrases).
+CRITICAL INSTRUCTIONS:
+1. competing_players: 
+   - ONLY include REAL, currently operating businesses in {input_data.location_city}
+   - Verify the business actually exists before including it
+   - Include specific street address or exact neighborhood (e.g., "123 Main St" or "Downtown District")
+   - Provide real website URLs when available
+   - Include annual revenue estimates if publicly available (from news, reports, or estimates based on size)
+   - Include year established if known
+   - Maximum 3 competitors
+   - If you cannot verify a business exists, DO NOT include it
+
+2. market_cap_or_target_revenue: Realistic estimate based on similar businesses in {input_data.location_city}.
+
+3. major_vicinity_locations: Real neighborhoods, districts, or landmarks in {input_data.location_city}.
+
+4. target_audience: Specific audience segments relevant to {input_data.location_city}.
+
+5. undiscovered_addons: Innovative ideas not commonly offered by competitors.
 
 Respond ONLY with the JSON object, no additional text before or after."""
 

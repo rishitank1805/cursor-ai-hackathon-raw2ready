@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { countries } from '../utils/countries'
+import { analyzeBusiness } from '../services/api'
 import './FormPage.css'
 
 const FormPage = () => {
@@ -15,7 +16,7 @@ const FormPage = () => {
     rawIdea: '',
     problem: '',
     fileAttachments: [],
-    model: 'openai-gpt',
+    model: 'chatgpt-latest',
     timeCommitment: '',
     outputTone: '',
     language: '',
@@ -27,6 +28,8 @@ const FormPage = () => {
   const [errors, setErrors] = useState({})
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [filteredCountries, setFilteredCountries] = useState(countries)
+  const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const fileInputRef = useRef(null)
   const countryInputRef = useRef(null)
 
@@ -118,12 +121,31 @@ const FormPage = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (validateForm()) {
-      console.log('Form submitted:', formData)
-      // Navigate to results page
-      navigate('/results')
+      setLoading(true)
+      setSubmitError('')
+      
+      try {
+        console.log('Submitting form data:', formData)
+        const result = await analyzeBusiness(formData)
+        console.log('API Response:', result)
+        
+        // Navigate to results page with the data
+        navigate('/results', { 
+          state: { 
+            result,
+            city: formData.city,
+            businessName: formData.businessName
+          } 
+        })
+      } catch (error) {
+        console.error('Error analyzing business:', error)
+        setSubmitError(error.message || 'Failed to analyze business. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -321,7 +343,7 @@ const FormPage = () => {
 
             {/* Model */}
             <div className="form-group">
-              <label htmlFor="model">Model</label>
+              <label htmlFor="model">AI Model</label>
               <select
                 id="model"
                 name="model"
@@ -329,8 +351,8 @@ const FormPage = () => {
                 onChange={handleChange}
                 className="form-input"
               >
-                <option value="openai-gpt">OpenAI (GPT)</option>
-                <option value="gemini">Gemini</option>
+                <option value="chatgpt-latest">ChatGPT 5.2 Latest (OpenAI)</option>
+                <option value="google-gemini-flash">Gemini 2.5 Flash (Google)</option>
               </select>
             </div>
 
@@ -449,9 +471,16 @@ const FormPage = () => {
             {errors.terms && <span className="error-message">{errors.terms}</span>}
           </div>
 
+          {/* Error Message */}
+          {submitError && (
+            <div className="submit-error">
+              {submitError}
+            </div>
+          )}
+
           {/* Submit Button */}
-          <button type="submit" className="submit-button">
-            Submit
+          <button type="submit" className="submit-button" disabled={loading}>
+            {loading ? 'Analyzing...' : 'Submit'}
           </button>
         </form>
       </div>

@@ -3,17 +3,29 @@
     {
       "name": "Competitor A",
       "description": "Leading coffee chain in the region with 15+ outlets",
-      "strengths": ["Brand recognition", "Prime locations", "Loyalty program"]
+      "location": "123 Main St, Downtown",
+      "url": "https://example.com",
+      "strengths": ["Brand recognition", "Prime locations", "Loyalty program"],
+      "annual_revenue": "$3M-5M",
+      "year_established": "2010"
     },
     {
       "name": "Competitor B",
       "description": "Artisan roastery with cafe",
-      "strengths": ["Premium quality", "Local sourcing", "Community events"]
+      "location": "456 Oak Ave, Midtown",
+      "url": "https://example2.com",
+      "strengths": ["Premium quality", "Local sourcing", "Community events"],
+      "annual_revenue": "$1M-2M",
+      "year_established": "2015"
     },
     {
       "name": "Competitor C",
       "description": "Quick-service coffee kiosk chain",
-      "strengths": ["Speed", "Affordable pricing", "High footfall locations"]
+      "location": "789 Park Blvd, North District",
+      "url": "",
+      "strengths": ["Speed", "Affordable pricing", "High footfall locations"],
+      "annual_revenue": "$500K-1M",
+      "year_established": "2018"
     }
   ],
   "market_cap_or_target_revenue": "Estimated $2-3M annual market in the region; target revenue $500K-800K in year 1",

@@ -4,6 +4,18 @@ Backend API that accepts business idea input from the frontend, builds a prompt,
 
 **Model providers:** OpenAI (ChatGPT 5.2 Latest) and Google DeepMind (Gemini 2.5 Flash).
 
+## ⚠️ Important Notice About Data Accuracy
+
+**The competitor information and business data provided by this system is AI-generated and may not be accurate or current.** AI models do not have real-time access to business databases and cannot verify if businesses currently exist or operate at specific locations.
+
+**Always verify competitor information independently** through:
+- Google Maps searches
+- Direct web searches
+- Business directories (Yelp, Google Business, etc.)
+- On-site visits or phone calls
+
+This tool is intended for **initial market research and ideation** only, not as a definitive source of competitor intelligence.
+
 ## Input (from Frontend)
 
 | Field | Required | Description |

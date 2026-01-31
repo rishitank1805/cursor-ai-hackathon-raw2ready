@@ -53,7 +53,16 @@ async def analyze_business(input_data: BusinessInput) -> OutputResponse:
             openai_api_key=openai_key,
             google_api_key=google_key,
         )
-        return result.model_copy(update={"prompt": prompt})
+        
+        # Add disclaimer about AI-generated data
+        disclaimer = (
+            "⚠️ IMPORTANT: This analysis is AI-generated based on the model's training data. "
+            "Business information may be outdated or inaccurate. Please verify all competitor "
+            "details independently through web searches, Google Maps, or direct contact before "
+            "making business decisions."
+        )
+        
+        return result.model_copy(update={"prompt": prompt, "disclaimer": disclaimer})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

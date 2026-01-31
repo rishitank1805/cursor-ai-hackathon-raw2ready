@@ -5,21 +5,27 @@
       "description": "Leading coffee chain with 15+ outlets.",
       "location": "Downtown",
       "url": "",
-      "strengths": ["Brand recognition", "Prime locations", "Loyalty program"]
+      "strengths": ["Brand recognition", "Prime locations", "Loyalty program"],
+      "annual_revenue": "$3M-5M",
+      "year_established": "2010"
     },
     {
       "name": "Competitor B",
       "description": "Artisan roastery with cafe.",
       "location": "South Congress",
       "url": "",
-      "strengths": ["Premium quality", "Local sourcing", "Community events"]
+      "strengths": ["Premium quality", "Local sourcing", "Community events"],
+      "annual_revenue": "$1M-2M",
+      "year_established": "2015"
     },
     {
       "name": "Competitor C",
       "description": "Quick-service coffee kiosk chain.",
       "location": "The Domain",
       "url": "",
-      "strengths": ["Speed", "Affordable pricing", "High footfall locations"]
+      "strengths": ["Speed", "Affordable pricing", "High footfall locations"],
+      "annual_revenue": "$500K-1M",
+      "year_established": "2018"
     }
   ],
   "market_cap_or_target_revenue": "Estimated $2-3M annual market in the region; target revenue $500K-800K in year 1",

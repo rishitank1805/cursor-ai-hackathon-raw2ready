@@ -30,7 +30,7 @@ async def call_openai(prompt: str, model_id: str, api_key: str) -> str:
         "messages": [
             {
                 "role": "system",
-                "content": "You are a business analyst. Respond only with valid JSON, no markdown or code blocks.",
+                "content": "You are a business research analyst with access to current business information. Your primary goal is ACCURACY - only provide information about businesses you can verify exist. If you're uncertain about a business, DO NOT include it. Respond only with valid JSON, no markdown or code blocks.",
             },
             {"role": "user", "content": prompt},
         ],
@@ -47,7 +47,9 @@ async def call_google_deepmind(prompt: str, model_id: str, api_key: str) -> str:
     import httpx
 
     system_instruction = (
-        "You are a business analyst specializing in deep research. "
+        "You are a business research analyst with access to current business information. "
+        "Your primary goal is ACCURACY - only provide information about businesses you can verify exist. "
+        "If you're uncertain about a business, DO NOT include it. "
         "Respond only with valid JSON, no markdown or code blocks."
     )
     full_prompt = f"{system_instruction}\n\n{prompt}"
@@ -99,7 +101,15 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
     competing_players = []
     for item in raw.get("competing_players", []):
         if isinstance(item, str):
-            competing_players.append({"name": item, "description": None, "location": None, "url": None, "strengths": None})
+            competing_players.append({
+                "name": item,
+                "description": None,
+                "location": None,
+                "url": None,
+                "strengths": None,
+                "annual_revenue": None,
+                "year_established": None,
+            })
         elif isinstance(item, dict):
             competing_players.append(
                 {
@@ -108,10 +118,20 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
                     "location": item.get("location"),
                     "url": item.get("url") or item.get("website"),
                     "strengths": item.get("strengths"),
+                    "annual_revenue": item.get("annual_revenue") or item.get("revenue"),
+                    "year_established": item.get("year_established") or item.get("founded") or item.get("year_founded"),
                 }
             )
         else:
-            competing_players.append({"name": str(item), "description": None, "location": None, "url": None, "strengths": None})
+            competing_players.append({
+                "name": str(item),
+                "description": None,
+                "location": None,
+                "url": None,
+                "strengths": None,
+                "annual_revenue": None,
+                "year_established": None,
+            })
 
     # Limit to max 5
     competing_players = competing_players[:5]
