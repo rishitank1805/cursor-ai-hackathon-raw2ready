@@ -377,6 +377,18 @@
   box-shadow: 0 6px 20px rgba(0, 102, 255, 0.4);
 }
 
+.create-presentation-btn {
+  padding: 1.25rem 3.5rem;
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, #00cc66 0%, #009944 100%);
+  box-shadow: 0 8px 25px rgba(0, 204, 102, 0.4);
+}
+
+.create-presentation-btn:hover {
+  background: linear-gradient(135deg, #009944 0%, #00cc66 100%);
+  box-shadow: 0 12px 35px rgba(0, 204, 102, 0.5);
+}
+
 .competitor-name {
   font-size: 1.125rem;
   font-weight: 600;

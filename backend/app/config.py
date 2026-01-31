@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None
     google_api_key: str | None = None
+    manus_api_key: str | None = None
 
     model_config = {
         "env_file": ".env",

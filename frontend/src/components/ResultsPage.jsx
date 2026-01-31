@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import './ResultsPage.css'
 import sampleOutput from '../assets/sample_output.json'
 
 const ResultsPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [data, setData] = useState(null)
   const [expandedCard, setExpandedCard] = useState(null)
+  
+  // Get business context from location state (passed from FormPage)
+  const businessContext = location.state?.businessContext || {
+    business_name: 'My Business',
+    raw_idea: 'A great business idea',
+    problem: '',
+    target_audience: '',
+    location_city: '',
+    country: '',
+    budget: '',
+    business_type: '',
+  }
 
   useEffect(() => {
-    // Load data from the JSON file
-    setData(sampleOutput)
-  }, [])
+    // Load data from the JSON file or location state
+    if (location.state?.analysisData) {
+      setData(location.state.analysisData)
+    } else {
+      setData(sampleOutput)
+    }
+  }, [location.state])
 
   const openCard = (cardId) => {
     setExpandedCard(cardId)
@@ -110,10 +127,22 @@ const ResultsPage = () => {
           </div>
         </div>
 
-        {/* Next Button */}
+        {/* Create Presentation Button */}
         <div className="next-button-container">
-          <button className="next-button" onClick={() => navigate('/presentation')}>
-            Next →
+          <button 
+            className="next-button create-presentation-btn" 
+            onClick={() => navigate('/presentation', { 
+              state: { 
+                businessContext: {
+                  ...businessContext,
+                  competing_players: data?.competing_players || [],
+                  market_cap_or_target_revenue: data?.market_cap_or_target_revenue || '',
+                  undiscovered_addons: data?.undiscovered_addons || [],
+                }
+              } 
+            })}
+          >
+            Create Presentation →
           </button>
         </div>
       </div>

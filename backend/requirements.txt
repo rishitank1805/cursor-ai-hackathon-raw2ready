@@ -6,5 +6,7 @@ openai>=1.0.0
 # google-genai causes segfaults - using REST API via httpx instead
 python-multipart>=0.0.12
 httpx>=0.24.0
+python-pptx>=0.6.21
+Pillow>=10.0.0
 pytest>=7.0.0
 pytest-asyncio>=0.21.0

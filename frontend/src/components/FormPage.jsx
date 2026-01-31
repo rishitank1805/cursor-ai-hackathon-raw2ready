@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { countries } from '../utils/countries'
 import './FormPage.css'
 
+const API_BASE_URL = 'http://localhost:8000'
+
 const FormPage = () => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -25,6 +27,8 @@ const FormPage = () => {
 
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState(null)
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [filteredCountries, setFilteredCountries] = useState(countries)
   const fileInputRef = useRef(null)
@@ -118,12 +122,86 @@ const FormPage = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  // Map form model to backend model ID
+  const getModelSelection = () => {
+    return formData.model === 'gemini' ? 'google-gemini-flash' : 'chatgpt-latest'
+  }
+
+  // Read first text file as file_content (optional)
+  const readFileContent = (files) => {
+    if (!files?.length) return Promise.resolve(null)
+    const textExtensions = ['.txt', '.md', '.csv']
+    const textFile = Array.from(files).find(f => {
+      const name = (f.name || '').toLowerCase()
+      return textExtensions.some(ext => name.endsWith(ext))
+    })
+    if (!textFile) return Promise.resolve(null)
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = () => resolve(null)
+      reader.readAsText(textFile)
+    })
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (validateForm()) {
-      console.log('Form submitted:', formData)
-      // Navigate to results page
-      navigate('/results')
+    if (!validateForm()) return
+
+    setIsLoading(true)
+    setApiError(null)
+
+    try {
+      const fileContent = await readFileContent(formData.fileAttachments)
+
+      const requestBody = {
+        business_name: formData.businessName.trim() || 'My Business',
+        location_city: formData.city.trim() || '',
+        country: formData.country.trim(),
+        target_audience: formData.targetAudience.trim() || null,
+        budget: formData.budget.trim() || null,
+        business_type: formData.businessType || null,
+        raw_idea: formData.rawIdea.trim(),
+        problem: formData.problem.trim() || null,
+        file_content: fileContent || null,
+        photos_description: null,
+        model_selection: getModelSelection(),
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.detail || `Research failed (${response.status})`)
+      }
+
+      const analysisData = await response.json()
+
+      const businessContext = {
+        business_name: formData.businessName.trim() || 'My Business',
+        raw_idea: formData.rawIdea.trim(),
+        problem: formData.problem.trim() || null,
+        target_audience: formData.targetAudience.trim() || null,
+        location_city: formData.city.trim() || null,
+        country: formData.country.trim() || null,
+        budget: formData.budget.trim() || null,
+        business_type: formData.businessType || null,
+      }
+
+      navigate('/results', {
+        state: {
+          analysisData,
+          businessContext,
+        },
+      })
+    } catch (err) {
+      setApiError(err.message || 'Research failed. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -449,9 +527,26 @@ const FormPage = () => {
             {errors.terms && <span className="error-message">{errors.terms}</span>}
           </div>
 
+          {apiError && (
+            <div className="api-error-banner">
+              {apiError}
+            </div>
+          )}
+
           {/* Submit Button */}
-          <button type="submit" className="submit-button">
-            Submit
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner"></span>
+                Researching...
+              </>
+            ) : (
+              'Submit & Run Research'
+            )}
           </button>
         </form>
       </div>
