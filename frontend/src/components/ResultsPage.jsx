@@ -22,7 +22,6 @@ const ResultsPage = () => {
   }
 
   useEffect(() => {
-    // Load data from the JSON file or location state
     if (location.state?.analysisData) {
       setData(location.state.analysisData)
     } else {
@@ -62,6 +61,14 @@ const ResultsPage = () => {
       <div className="results-container">
         <h1 className="results-title">Your Business Analysis</h1>
         <p className="results-subtitle">Here's your comprehensive business proposal breakdown</p>
+
+        {/* Disclaimer if present */}
+        {data.disclaimer && (
+          <div className="disclaimer-banner">
+            <span className="disclaimer-icon">⚠️</span>
+            <p className="disclaimer-text">{data.disclaimer}</p>
+          </div>
+        )}
 
         {/* Your Idea/Pitch Section */}
         <div className="section-container">
@@ -211,28 +218,54 @@ const ResultsPage = () => {
               </>
             )}
 
-            {expandedCard?.startsWith('competitor-') && (
-              <>
-                <div className="card-header">
-                  <h2 className="card-title">
-                    {data.competing_players[parseInt(expandedCard.split('-')[1])].name}
-                  </h2>
-                </div>
-                <div className="card-content">
-                  <p className="competitor-description">
-                    {data.competing_players[parseInt(expandedCard.split('-')[1])].description}
-                  </p>
-                  <div className="competitor-strengths">
-                    <span className="strengths-label">Strengths:</span>
-                    <div className="strengths-tags">
-                      {data.competing_players[parseInt(expandedCard.split('-')[1])].strengths.map((strength, sIndex) => (
-                        <span key={sIndex} className="strength-tag">{strength}</span>
-                      ))}
-                    </div>
+            {expandedCard?.startsWith('competitor-') && (() => {
+              const competitor = data.competing_players[parseInt(expandedCard.split('-')[1])]
+              return (
+                <>
+                  <div className="card-header">
+                    <h2 className="card-title">{competitor.name}</h2>
                   </div>
-                </div>
-              </>
-            )}
+                  <div className="card-content">
+                    {competitor.location && (
+                      <p className="competitor-info">
+                        <strong>📍 Location:</strong> {competitor.location}
+                      </p>
+                    )}
+                    {competitor.url && (
+                      <p className="competitor-info">
+                        <strong>🌐 Website:</strong>{' '}
+                        <a href={competitor.url} target="_blank" rel="noopener noreferrer">
+                          {competitor.url}
+                        </a>
+                      </p>
+                    )}
+                    {competitor.annual_revenue && (
+                      <p className="competitor-info">
+                        <strong>💰 Annual Revenue:</strong> {competitor.annual_revenue}
+                      </p>
+                    )}
+                    {competitor.year_established && (
+                      <p className="competitor-info">
+                        <strong>📅 Established:</strong> {competitor.year_established}
+                      </p>
+                    )}
+                    {competitor.description && (
+                      <p className="competitor-description">{competitor.description}</p>
+                    )}
+                    {competitor.strengths && competitor.strengths.length > 0 && (
+                      <div className="competitor-strengths">
+                        <span className="strengths-label">Strengths:</span>
+                        <div className="strengths-tags">
+                          {competitor.strengths.map((strength, sIndex) => (
+                            <span key={sIndex} className="strength-tag">{strength}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       )}

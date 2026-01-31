@@ -35,11 +35,14 @@ def _fetch_url(url: str, timeout: float = 10.0) -> bytes | None:
 def _resolve_slide_image(slide_data: dict, idx: int, presentation_title: str) -> bytes | None:
     """Image for slide from Picsum only (no Unsplash). Seed from content so each slide/topic differs."""
     query = (slide_data.get("image_search_query") or "").strip()
+    title = (slide_data.get("title") or "").strip()
     if not query:
-        title = (slide_data.get("title") or "").strip()
         query = f"{presentation_title} {title}".strip() or "business"
-    seed = abs(hash(query + str(idx))) % (10**8)
-    url = f"https://picsum.photos/seed/{seed}/800/450"
+    # Combine query + title + idx for a unique, content-derived seed per slide
+    seed_str = f"{query}|{title}|{idx}"
+    seed = abs(hash(seed_str)) % (10**8)
+    # Higher resolution for sharper export (16:9)
+    url = f"https://picsum.photos/seed/{seed}/1200/675"
     return _fetch_url(url)
 
 
@@ -68,7 +71,7 @@ def _add_bullets(slide, left, top, width, height, content_list, color, font_size
         p.font.size = Pt(font_size)
         p.font.name = "Calibri"
         p.font.color.rgb = color
-        p.space_before = Pt(6)
+        p.space_before = Pt(8)
         p.level = 0
 
 
@@ -291,6 +294,35 @@ def _placeholder(slide, left, top, width, height):
     s.line.color.rgb = COLOR_ACCENT
 
 
+# ---- Layout 7: Key metric / big message – large image left, text right with accent ----
+def _layout_big_image_left(slide, slide_data, img_bytes, presentation_title, generated_tagline, business_name: str | None = None):
+    title_text = slide_data.get("title", "Untitled")
+    subtitle_text = slide_data.get("subtitle", "")
+    content_list = slide_data.get("content", [])
+    img_w = Inches(7.2)
+    text_left = img_w + Inches(0.5)
+    text_width = SLIDE_WIDTH - text_left - Inches(0.6)
+    # Left: large image
+    if img_bytes:
+        try:
+            slide.shapes.add_picture(io.BytesIO(img_bytes), Inches(0), Inches(0), img_w, SLIDE_HEIGHT)
+        except Exception:
+            _placeholder(slide, Inches(0), Inches(0), img_w, SLIDE_HEIGHT)
+    else:
+        _placeholder(slide, Inches(0), Inches(0), img_w, SLIDE_HEIGHT)
+    # Vertical accent between image and text
+    acc = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, img_w, Inches(0), Inches(0.12), SLIDE_HEIGHT)
+    acc.fill.solid()
+    acc.fill.fore_color.rgb = COLOR_ACCENT
+    acc.line.fill.background()
+    # Right: title + subtitle + bullets (light background feel via dark text)
+    _add_textbox(slide, text_left, Inches(0.6), text_width, Inches(1.0), title_text, 32, True, COLOR_DARK_TEXT)
+    if subtitle_text:
+        _add_textbox(slide, text_left, Inches(1.65), text_width, Inches(0.55), subtitle_text, 18, False, RGBColor(0x55, 0x55, 0x66))
+    bullet_top = Inches(2.45) if subtitle_text else Inches(1.9)
+    _add_bullets(slide, text_left, bullet_top, text_width, Inches(4.5), content_list, COLOR_DARK_TEXT, 17)
+
+
 # ---- Thank You slide (always last) ----
 def _layout_thank_you(slide):
     bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), SLIDE_WIDTH, SLIDE_HEIGHT)
@@ -305,7 +337,7 @@ def _layout_thank_you(slide):
     _add_textbox(slide, Inches(2), Inches(4.1), SLIDE_WIDTH - Inches(4), Inches(0.6), "Questions?", 24, False, COLOR_LIGHT)
 
 
-# Layout roster: 0=title, 1=split L, 2=split R, 3=img top, 4=img bottom, 5=strip L, 6=centered
+# Layout roster: 0=title, 1=split L, 2=split R, 3=img top, 4=img bottom, 5=strip L, 6=centered, 7=big image L
 LAYOUTS = [
     _layout_title,
     _layout_split_left_text,
@@ -314,6 +346,7 @@ LAYOUTS = [
     _layout_image_bottom,
     _layout_strip_left,
     _layout_centered,
+    _layout_big_image_left,
 ]
 
 

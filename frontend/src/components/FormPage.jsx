@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { countries } from '../utils/countries'
+import { analyzeBusiness } from '../services/api'
 import './FormPage.css'
 
 const API_BASE_URL = 'http://localhost:8000'
@@ -17,7 +18,7 @@ const FormPage = () => {
     rawIdea: '',
     problem: '',
     fileAttachments: [],
-    model: 'openai-gpt',
+    model: 'chatgpt-latest',
     timeCommitment: '',
     outputTone: '',
     language: '',
@@ -399,7 +400,7 @@ const FormPage = () => {
 
             {/* Model */}
             <div className="form-group">
-              <label htmlFor="model">Model</label>
+              <label htmlFor="model">AI Model</label>
               <select
                 id="model"
                 name="model"
@@ -407,8 +408,8 @@ const FormPage = () => {
                 onChange={handleChange}
                 className="form-input"
               >
-                <option value="openai-gpt">OpenAI (GPT)</option>
-                <option value="gemini">Gemini</option>
+                <option value="chatgpt-latest">ChatGPT 5.2 Latest (OpenAI)</option>
+                <option value="google-gemini-flash">Gemini 2.5 Flash (Google)</option>
               </select>
             </div>
 

@@ -65,6 +65,44 @@
   margin-bottom: 3rem;
 }
 
+.disclaimer-banner {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 87, 34, 0.1) 100%);
+  border: 2px solid rgba(255, 152, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 0 auto 2rem;
+  max-width: 900px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.disclaimer-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.disclaimer-text {
+  color: #ffb74d;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 500;
+}
+
 .section-container {
   margin-bottom: 4rem;
   display: flex;
@@ -396,11 +434,45 @@
   margin: 0 0 0.75rem 0;
 }
 
+.competitor-info {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.competitor-info:last-of-type {
+  border-bottom: none;
+}
+
+.competitor-info strong {
+  color: #0066ff;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.competitor-info a {
+  color: #3399ff;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.competitor-info a:hover {
+  color: #66b3ff;
+  text-decoration: underline;
+}
+
 .competitor-description {
   font-size: 0.95rem;
   color: #b0b0b0;
-  margin: 0 0 1rem 0;
+  margin: 1rem 0;
   line-height: 1.6;
+  padding: 1rem;
+  background: rgba(0, 102, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #0066ff;
 }
 
 .competitor-strengths {

@@ -39,6 +39,8 @@ class CompetingPlayer(BaseModel):
     location: Optional[str] = None
     url: Optional[str] = None
     strengths: Optional[list[str]] = None
+    annual_revenue: Optional[str] = None
+    year_established: Optional[str] = None
 
 
 class OutputResponse(BaseModel):
@@ -47,6 +49,10 @@ class OutputResponse(BaseModel):
     prompt: Optional[str] = Field(
         None,
         description="The full prompt sent to the AI model (for display/debugging)",
+    )
+    disclaimer: Optional[str] = Field(
+        None,
+        description="Important notice about data accuracy and verification",
     )
     competing_players: list[CompetingPlayer] = Field(
         ...,
