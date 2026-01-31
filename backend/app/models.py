@@ -17,18 +17,18 @@ MODEL_REGISTRY = {
     "google-gemini-flash": ("google", "gemini-2.5-flash"),
 }
 
+# OpenAI models that only support default temperature (do not send temperature param)
+OPENAI_NO_TEMPERATURE_MODELS = {"gpt-5.2-chat-latest"}
 
 # Manus API configuration
 MANUS_API_BASE_URL = "https://api.manus.im"
 
 
-async def call_openai(prompt: str, model_id: str, api_key: str) -> str:
-    """Call OpenAI API."""
+async def call_openai(prompt: str, model_id: str, api_key: str, temperature: float = 0.2) -> str:
+    """Call OpenAI API. Uses low temperature when supported for accurate, factual output."""
     from openai import AsyncOpenAI
 
     client = AsyncOpenAI(api_key=api_key)
-    
-    # Some models (like gpt-5.2-chat-latest) don't support temperature parameter
     kwargs = {
         "model": model_id,
         "messages": [
@@ -39,15 +39,18 @@ async def call_openai(prompt: str, model_id: str, api_key: str) -> str:
             {"role": "user", "content": prompt},
         ],
     }
-    if "gpt-5.2" not in model_id and "chat-latest" not in model_id:
-        kwargs["temperature"] = 0.7
-    
+    # Only send temperature for models that support it (e.g. gpt-5.2-chat-latest only supports default)
+    if model_id not in OPENAI_NO_TEMPERATURE_MODELS:
+        try:
+            kwargs["temperature"] = max(0.0, min(1.0, temperature))
+        except (TypeError, ValueError):
+            kwargs["temperature"] = 0.2
     response = await client.chat.completions.create(**kwargs)
     return response.choices[0].message.content or ""
 
 
-async def call_google_deepmind(prompt: str, model_id: str, api_key: str) -> str:
-    """Call Google DeepMind (Gemini) API for deep research topics via REST."""
+async def call_google_deepmind(prompt: str, model_id: str, api_key: str, temperature: float = 0.2) -> str:
+    """Call Google DeepMind (Gemini) API. Uses low temperature by default for accurate output."""
     import httpx
 
     system_instruction = (
@@ -60,9 +63,10 @@ async def call_google_deepmind(prompt: str, model_id: str, api_key: str) -> str:
 
     url = f"https://generativelanguage.googleapis.com/v1/models/{model_id}:generateContent"
     headers = {"Content-Type": "application/json"}
+    temp = max(0.0, min(1.0, temperature)) if isinstance(temperature, (int, float)) else 0.2
     payload = {
         "contents": [{"parts": [{"text": full_prompt}]}],
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096},
+        "generationConfig": {"temperature": temp, "maxOutputTokens": 4096},
     }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
@@ -170,6 +174,7 @@ async def query_model(
     model_selection: str,
     openai_api_key: str | None = None,
     google_api_key: str | None = None,
+    temperature: float = 0.2,
 ) -> OutputResponse:
     """
     Route prompt to selected model and return normalized OutputResponse.
@@ -179,6 +184,7 @@ async def query_model(
         model_selection: User's model choice (e.g., openai-gpt4, google-gemini-pro)
         openai_api_key: OpenAI API key (required for OpenAI models)
         google_api_key: Google/Gemini API key (required for Google DeepMind models)
+        temperature: LLM temperature (0.0–1.0). Lower = more factual/accurate. Default 0.2.
 
     Returns:
         OutputResponse with structured business analysis
@@ -190,15 +196,16 @@ async def query_model(
         )
 
     provider, model_id = MODEL_REGISTRY[model_selection]
+    temp = max(0.0, min(1.0, temperature)) if isinstance(temperature, (int, float)) else 0.2
 
     if provider == "openai":
         if not openai_api_key:
             raise ValueError("OpenAI API key required for OpenAI models")
-        raw_text = await call_openai(prompt, model_id, openai_api_key)
+        raw_text = await call_openai(prompt, model_id, openai_api_key, temperature=temp)
     else:
         if not google_api_key:
             raise ValueError("Google API key required for Google DeepMind (Gemini) models")
-        raw_text = await call_google_deepmind(prompt, model_id, google_api_key)
+        raw_text = await call_google_deepmind(prompt, model_id, google_api_key, temperature=temp)
 
     raw_dict = extract_json_from_response(raw_text)
     return normalize_response(raw_dict)
@@ -607,3 +614,147 @@ async def edit_presentation(
     raw_text = await call_manus_api(prompt, manus_api_key)
     raw_dict = extract_json_from_response(raw_text)
     return normalize_presentation_response(raw_dict)
+
+
+# ==================== MiniMax Video Generation ====================
+
+MINIMAX_VIDEO_BASE = "https://api.minimax.io/v1"
+MINIMAX_VIDEO_MODEL = "MiniMax-Hailuo-2.3"
+
+
+def _video_duration_for_api(duration_seconds: int) -> int:
+    """Map user duration (30–90s) to MiniMax supported 6 or 10 seconds."""
+    if duration_seconds <= 50:
+        return 6
+    return 10
+
+
+def _build_video_prompt(topic: str, business_name: str | None) -> str:
+    """Build a short, cinematic text-to-video prompt from topic and business."""
+    parts = []
+    if business_name:
+        parts.append(f"Professional demo for {business_name}.")
+    parts.append(topic.strip())
+    prompt = " ".join(parts)
+    if len(prompt) > 1800:
+        prompt = prompt[:1797] + "..."
+    prompt += " [Static shot] then [Push in]. Cinematic, modern, professional."
+    return prompt[:2000]
+
+
+def _build_video_prompt_from_user(prompt: str, business_name: str | None) -> str:
+    """Use user-provided prompt as main video description; optionally prefix business name."""
+    parts = []
+    if business_name:
+        parts.append(f"Professional demo for {business_name}.")
+    parts.append(prompt.strip())
+    text = " ".join(parts)
+    if len(text) > 1800:
+        text = text[:1797] + "..."
+    text += " [Static shot] then [Push in]. Cinematic, modern, professional."
+    return text[:2000]
+
+
+async def generate_demo_video(
+    topic: str,
+    duration_seconds: int,
+    api_key: str,
+    business_name: str | None = None,
+    prompt: str | None = None,
+) -> dict:
+    """
+    Generate a demo video via MiniMax text-to-video.
+    If prompt is provided, it is used as the main video description; otherwise topic is used.
+    Creates task, polls until Success/Fail, returns video URL when done.
+    """
+    import httpx
+
+    if not api_key:
+        raise ValueError("MiniMax API key is required for video generation")
+
+    duration_used = _video_duration_for_api(duration_seconds)
+    if prompt and prompt.strip():
+        video_prompt = _build_video_prompt_from_user(prompt.strip(), business_name)
+    else:
+        video_prompt = _build_video_prompt(topic, business_name)
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": MINIMAX_VIDEO_MODEL,
+        "prompt": video_prompt,
+        "duration": duration_used,
+        "resolution": "768P",
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        create_resp = await client.post(
+            f"{MINIMAX_VIDEO_BASE}/video_generation",
+            headers=headers,
+            json=payload,
+        )
+        create_resp.raise_for_status()
+        create_data = create_resp.json()
+        base_resp = create_data.get("base_resp", {})
+        if base_resp.get("status_code") != 0:
+            raise ValueError(base_resp.get("status_msg", "MiniMax video task creation failed"))
+        task_id = create_data.get("task_id")
+        if not task_id:
+            raise ValueError("MiniMax did not return a task_id")
+
+        max_attempts = 60
+        for _ in range(max_attempts):
+            await asyncio.sleep(10)
+            query_resp = await client.get(
+                f"{MINIMAX_VIDEO_BASE}/query/video_generation",
+                headers=headers,
+                params={"task_id": task_id},
+            )
+            query_resp.raise_for_status()
+            query_data = query_resp.json()
+            status = query_data.get("status", "")
+
+            if status == "Success":
+                file_id = query_data.get("file_id")
+                if not file_id:
+                    return {
+                        "task_id": task_id,
+                        "status": "Success",
+                        "video_url": None,
+                        "duration_used_seconds": duration_used,
+                        "error_message": "No file_id in response",
+                    }
+                retrieve_resp = await client.get(
+                    f"{MINIMAX_VIDEO_BASE}/files/retrieve",
+                    headers=headers,
+                    params={"file_id": file_id},
+                )
+                retrieve_resp.raise_for_status()
+                retrieve_data = retrieve_resp.json()
+                file_info = retrieve_data.get("file", {})
+                video_url = file_info.get("download_url")
+                return {
+                    "task_id": task_id,
+                    "status": "Success",
+                    "video_url": video_url,
+                    "duration_used_seconds": duration_used,
+                    "error_message": None,
+                }
+
+            if status == "Fail":
+                return {
+                    "task_id": task_id,
+                    "status": "Fail",
+                    "video_url": None,
+                    "duration_used_seconds": duration_used,
+                    "error_message": query_data.get("error_message", "Video generation failed"),
+                }
+
+        return {
+            "task_id": task_id,
+            "status": "Fail",
+            "video_url": None,
+            "duration_used_seconds": duration_used,
+            "error_message": "Video generation timed out",
+        }

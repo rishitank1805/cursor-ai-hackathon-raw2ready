@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.config import Settings
-from app.models import query_model, generate_presentation, edit_presentation
+from app.models import query_model, generate_presentation, edit_presentation, generate_demo_video
 from app.pptx_builder import build_pptx_from_response
 from app.prompt_builder import build_prompt
 from app.schemas import (
@@ -15,6 +15,8 @@ from app.schemas import (
     PresentationEditInput,
     PresentationResponse,
     ExportPptxRequest,
+    VideoGenerateInput,
+    VideoGenerateResponse,
 )
 
 app = FastAPI(
@@ -61,6 +63,7 @@ async def analyze_business(input_data: BusinessInput) -> OutputResponse:
             model_selection=input_data.model_selection,
             openai_api_key=openai_key,
             google_api_key=google_key,
+            temperature=settings.temperature,
         )
         
         # Add disclaimer about AI-generated data
@@ -195,6 +198,42 @@ def _sanitize_filename(title: str) -> str:
     """Return a safe filename from presentation title."""
     safe = "".join(c for c in title if c.isalnum() or c in " -_")
     return safe.strip() or "presentation"
+
+
+@app.post("/api/video/generate", response_model=VideoGenerateResponse)
+async def create_demo_video(input_data: VideoGenerateInput) -> VideoGenerateResponse:
+    """
+    Generate a demo video from the presentation topic using MiniMax.
+    Duration 30–90 seconds (API produces 6s or 10s clip based on selection).
+    """
+    minimax_key = settings.minimax_api_key
+    if not minimax_key:
+        raise HTTPException(
+            status_code=400,
+            detail="MiniMax API key not configured. Set MINIMAX_API_KEY in environment.",
+        )
+    try:
+        result = await generate_demo_video(
+            topic=input_data.topic,
+            duration_seconds=input_data.duration_seconds,
+            api_key=minimax_key,
+            business_name=input_data.business_name,
+            prompt=input_data.prompt,
+        )
+        return VideoGenerateResponse(
+            task_id=result["task_id"],
+            status=result["status"],
+            video_url=result.get("video_url"),
+            duration_used_seconds=result["duration_used_seconds"],
+            error_message=result.get("error_message"),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Video generation failed: {str(e)}",
+        )
 
 
 @app.get("/api/models")

@@ -143,3 +143,30 @@ class ExportPptxRequest(BaseModel):
 
     presentation: PresentationResponse = Field(..., description="Generated presentation data")
     business_name: Optional[str] = Field(None, description="Business name to show on first slide")
+
+
+# ==================== Video Generation (MiniMax) ====================
+
+
+class VideoGenerateInput(BaseModel):
+    """Input for demo video generation. Topic from presentation/business; optional custom prompt."""
+
+    topic: str = Field(..., description="Topic or pitch summary for the video (e.g. presentation title + tagline)")
+    prompt: Optional[str] = Field(None, description="Custom video prompt from user; when provided, used as main input for the video")
+    business_name: Optional[str] = Field(None, description="Business name for context")
+    duration_seconds: int = Field(
+        default=60,
+        ge=30,
+        le=90,
+        description="Requested duration in seconds (30–90). API uses 6s or 10s per clip.",
+    )
+
+
+class VideoGenerateResponse(BaseModel):
+    """Response after generating demo video via MiniMax."""
+
+    task_id: str = Field(..., description="MiniMax task ID")
+    status: str = Field(..., description="Task status: Success, Fail, etc.")
+    video_url: Optional[str] = Field(None, description="Download or play URL when status is Success")
+    duration_used_seconds: int = Field(..., description="Actual clip length used (6 or 10) due to API limits")
+    error_message: Optional[str] = Field(None, description="Error message when status is Fail")
