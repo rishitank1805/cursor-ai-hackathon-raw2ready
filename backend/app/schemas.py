@@ -36,15 +36,21 @@ class CompetingPlayer(BaseModel):
 
     name: str
     description: Optional[str] = None
+    location: Optional[str] = None
+    url: Optional[str] = None
     strengths: Optional[list[str]] = None
 
 
 class OutputResponse(BaseModel):
     """Structured output response from the model."""
 
+    prompt: Optional[str] = Field(
+        None,
+        description="The full prompt sent to the AI model (for display/debugging)",
+    )
     competing_players: list[CompetingPlayer] = Field(
         ...,
-        description="Top 5 (or fewer) competing players in the region",
+        description="Top 3 competing players in the city, or nearby regions if city has fewer",
         max_length=5,
     )
     market_cap_or_target_revenue: str = Field(

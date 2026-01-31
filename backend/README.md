@@ -2,7 +2,7 @@
 
 Backend API that accepts business idea input from the frontend, builds a prompt, queries the selected AI model, and returns structured JSON output.
 
-**Model providers:** OpenAI and Google DeepMind (Gemini) for deep research topics.
+**Model providers:** OpenAI (ChatGPT 5.2 Latest) and Google DeepMind (Gemini 2.5 Flash).
 
 ## Input (from Frontend)
 
@@ -18,7 +18,7 @@ Backend API that accepts business idea input from the frontend, builds a prompt,
 | problem | No | Problem being solved |
 | file_content | No | Extracted text from file attachment |
 | photos_description | No | Description of photos |
-| model_selection | Yes | Model: `openai-gpt4`, `openai-gpt35`, `google-gemini-pro`, `google-gemini-flash` |
+| model_selection | Yes | Model: `chatgpt-latest`, `google-gemini-flash` |
 
 ## Output (JSON)
 

@@ -15,7 +15,7 @@ class TestBusinessInput:
             location_city="Bangalore",
             country="India",
             raw_idea="Coffee shop",
-            model_selection="openai-gpt4",
+            model_selection="chatgpt-latest",
         )
         assert data.business_name == "Test"
         assert data.target_audience is None
@@ -33,7 +33,7 @@ class TestBusinessInput:
             problem="No good coffee",
             file_content="File text",
             photos_description="Photo desc",
-            model_selection="google-gemini-pro",
+            model_selection="google-gemini-flash",
         )
         assert data.file_content == "File text"
         assert data.photos_description == "Photo desc"

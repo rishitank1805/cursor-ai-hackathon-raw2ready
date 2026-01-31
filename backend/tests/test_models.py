@@ -125,10 +125,9 @@ class TestModelRegistry:
 
     def test_registry_has_expected_models(self):
         """Registry contains expected model mappings."""
-        assert "openai-gpt4" in MODEL_REGISTRY
-        assert "openai-gpt35" in MODEL_REGISTRY
-        assert "google-gemini-pro" in MODEL_REGISTRY
+        assert "chatgpt-latest" in MODEL_REGISTRY
         assert "google-gemini-flash" in MODEL_REGISTRY
+        assert len(MODEL_REGISTRY) == 2
 
     def test_registry_values_are_tuples(self):
         """Each registry entry is (provider, model_id)."""
@@ -147,7 +146,7 @@ class TestQueryModel:
         import asyncio
         result = asyncio.run(query_model(
             prompt="Return: {\"competing_players\":[],\"market_cap_or_target_revenue\":\"test\",\"major_vicinity_locations\":[],\"target_audience\":[],\"undiscovered_addons\":[]}",
-            model_selection="openai-gpt4",
+            model_selection="chatgpt-latest",
             openai_api_key="sk-test",
         ))
         assert result is not None
@@ -169,7 +168,7 @@ class TestQueryModel:
         async def run():
             await query_model(
                 prompt="test",
-                model_selection="openai-gpt4",
+                model_selection="chatgpt-latest",
                 openai_api_key=None,
             )
         with pytest.raises(ValueError, match="OpenAI API key"):
@@ -181,7 +180,7 @@ class TestQueryModel:
         async def run():
             await query_model(
                 prompt="test",
-                model_selection="google-gemini-pro",
+                model_selection="google-gemini-flash",
                 google_api_key=None,
             )
         with pytest.raises(ValueError, match="Google API key"):

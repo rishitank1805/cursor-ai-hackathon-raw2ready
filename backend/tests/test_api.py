@@ -24,7 +24,7 @@ def valid_payload():
         "location_city": "Bangalore",
         "country": "India",
         "raw_idea": "Specialty coffee shop",
-        "model_selection": "openai-gpt4",
+        "model_selection": "chatgpt-latest",
     }
 
 
@@ -48,14 +48,14 @@ class TestModelsEndpoint:
         data = response.json()
         assert "models" in data
         assert len(data["models"]) > 0
-        assert any(m["id"] == "openai-gpt4" for m in data["models"])
+        assert any(m["id"] == "chatgpt-latest" for m in data["models"])
 
     def test_list_models_includes_google_deepmind(self, client):
         """Models endpoint includes Google DeepMind (Gemini) options."""
         response = client.get("/api/models")
         assert response.status_code == 200
         models = response.json()["models"]
-        assert any(m["id"] == "google-gemini-pro" for m in models)
+        assert any(m["id"] == "google-gemini-flash" for m in models)
 
 
 class TestAnalyzeEndpoint:
@@ -106,7 +106,7 @@ class TestAnalyzeEndpoint:
             "problem": "Limited options",
             "file_content": "Market research notes",
             "photos_description": "Storefront photo",
-            "model_selection": "openai-gpt4",
+            "model_selection": "chatgpt-latest",
         }
         response = client.post("/api/analyze", json=payload)
         # Accept 200 (success) or 500 (no API key)

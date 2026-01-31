@@ -2,17 +2,23 @@
   "competing_players": [
     {
       "name": "Competitor A",
-      "description": "Leading coffee chain in the region with 15+ outlets",
+      "description": "Leading coffee chain with 15+ outlets.",
+      "location": "Downtown",
+      "url": "",
       "strengths": ["Brand recognition", "Prime locations", "Loyalty program"]
     },
     {
       "name": "Competitor B",
-      "description": "Artisan roastery with cafe",
+      "description": "Artisan roastery with cafe.",
+      "location": "South Congress",
+      "url": "",
       "strengths": ["Premium quality", "Local sourcing", "Community events"]
     },
     {
       "name": "Competitor C",
-      "description": "Quick-service coffee kiosk chain",
+      "description": "Quick-service coffee kiosk chain.",
+      "location": "The Domain",
+      "url": "",
       "strengths": ["Speed", "Affordable pricing", "High footfall locations"]
     }
   ],

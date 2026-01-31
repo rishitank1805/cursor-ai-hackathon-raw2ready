@@ -23,78 +23,62 @@ def build_prompt(
     """
     file_content = file_content or input_data.file_content
     photos_description = photos_description or input_data.photos_description
-    sections = []
 
-    # Core business info
-    sections.append(
-        f"""You are a business analyst and market research expert. Analyze the following business idea and provide a comprehensive market analysis.
+    # Main prompt using user's exact format
+    prompt = f"""I want to start a business named {input_data.business_name} near {input_data.location_city} in {input_data.country} give me the top 3 competitors in {input_data.location_city}, if there is no competitor in {input_data.location_city} then i need near by regions. The idea is {input_data.raw_idea}."""
 
-## Business Information
-- **Business Name:** {input_data.business_name}
-- **Location:** {input_data.location_city}, {input_data.country}
-- **Business Type:** {input_data.business_type or "Not specified"}
-- **Raw Idea:** {input_data.raw_idea}
-"""
-    )
-
+    # Add optional context if provided
+    additional_context = []
+    
     if input_data.problem:
-        sections.append(f"- **Problem Being Solved:** {input_data.problem}\n")
-
+        additional_context.append(f"Problem being solved: {input_data.problem}")
+    
     if input_data.target_audience:
-        sections.append(f"- **Initial Target Audience:** {input_data.target_audience}\n")
-
+        additional_context.append(f"Target audience: {input_data.target_audience}")
+    
     if input_data.budget:
-        sections.append(f"- **Budget:** {input_data.budget}\n")
-
+        additional_context.append(f"Budget: {input_data.budget}")
+    
+    if input_data.business_type:
+        additional_context.append(f"Business type: {input_data.business_type}")
+    
     if file_content:
-        sections.append(
-            f"""
-## Additional Context (from attached file)
-{file_content}
-"""
-        )
-
+        additional_context.append(f"Additional context from file: {file_content}")
+    
     if photos_description:
-        sections.append(
-            f"""
-## Visual Context (from photos)
-{photos_description}
-"""
-        )
+        additional_context.append(f"Visual context: {photos_description}")
+    
+    if additional_context:
+        prompt += "\n\nAdditional information:\n" + "\n".join(f"- {ctx}" for ctx in additional_context)
 
     # Output format instructions
-    sections.append(
-        """
-## Required Output Format
+    prompt += f"""
+
 You MUST respond with a valid JSON object (no markdown, no code blocks) with exactly this structure:
 
-{
+{{
   "competing_players": [
-    {
+    {{
       "name": "Competitor Name",
-      "description": "Brief description",
+      "description": "One short sentence (max 15 words).",
+      "location": "Address or area in {input_data.location_city}",
+      "url": "https://website-if-known-else-empty-string",
       "strengths": ["strength1", "strength2"]
-    }
+    }}
   ],
   "market_cap_or_target_revenue": "Estimated market cap or target revenue for this business in the region",
   "major_vicinity_locations": ["Location 1", "Location 2", "Location 3"],
   "target_audience": ["Audience segment 1", "Audience segment 2", "Audience segment 3"],
   "undiscovered_addons": ["Add-on idea 1", "Add-on idea 2", "Add-on idea 3"]
-}
+}}
 
-## Instructions
-1. **competing_players**: List the top 5 (or fewer if less exist) competing players/businesses in the region ({input_data.location_city}, {input_data.country}). Include name, description, and key strengths. Maximum 5 entries.
+Instructions:
+1. competing_players: List top 3 competitors in {input_data.location_city}. If fewer than 3 exist in the city, include competitors from nearby regions. Include name, short description (max 15 words), location (address/area), url (website if known, else empty string), and 1-3 strength tags.
+2. market_cap_or_target_revenue: One sentence estimate for this business type in the region.
+3. major_vicinity_locations: 3-5 locations near {input_data.location_city} (neighborhoods, districts, landmarks).
+4. target_audience: 3-5 audience segments (short labels).
+5. undiscovered_addons: 3-5 add-on ideas (short phrases).
 
-2. **market_cap_or_target_revenue**: Provide a realistic estimate of market cap or target revenue for this type of business in this region. Consider local market conditions.
+Respond ONLY with the JSON object, no additional text before or after."""
 
-3. **major_vicinity_locations**: List major nearby locations, neighborhoods, or areas in the same region that are relevant for this business (e.g., commercial districts, residential areas, tourist spots).
-
-4. **target_audience**: List all relevant target audience segments for this business. Be comprehensive - include demographics, psychographics, and use cases. Can be 3-7 segments.
-
-5. **undiscovered_addons**: Suggest add-on products, services, or features related to this business idea that competitors haven't yet explored. These should be innovative and feasible.
-
-Respond ONLY with the JSON object, no additional text before or after.
-"""
-    )
-
-    return "".join(sections)
+    return prompt

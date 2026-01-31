@@ -14,7 +14,7 @@ def minimal_input():
         location_city="Bangalore",
         country="India",
         raw_idea="Specialty coffee shop with local beans",
-        model_selection="openai-gpt4",
+        model_selection="chatgpt-latest",
     )
 
 
@@ -32,7 +32,7 @@ def full_input():
         problem="Limited healthy quick-service options in the area",
         file_content="Market research: 40% growth in plant-based food sector.",
         photos_description="Location near corporate park, high footfall",
-        model_selection="google-gemini-pro",
+        model_selection="google-gemini-flash",
     )
 
 
@@ -47,7 +47,7 @@ class TestPromptBuilder:
         assert "Bangalore" in prompt
         assert "India" in prompt
         assert "Specialty coffee shop with local beans" in prompt
-        assert "openai-gpt4" not in prompt  # Model selection not in prompt content
+        assert "chatgpt-latest" not in prompt  # Model selection not in prompt content
 
     def test_build_prompt_full_input(self, full_input):
         """Prompt includes all optional fields when provided."""
@@ -72,7 +72,7 @@ class TestPromptBuilder:
         assert "major_vicinity_locations" in prompt
         assert "target_audience" in prompt
         assert "undiscovered_addons" in prompt
-        assert "Maximum 5" in prompt or "max 5" in prompt.lower() or "5 entries" in prompt
+        assert "top 3" in prompt.lower()  # Updated to check for top 3 competitors
 
     def test_build_prompt_file_content_override(self, minimal_input):
         """File content can be passed as override."""

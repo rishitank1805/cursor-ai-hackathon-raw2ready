@@ -9,15 +9,12 @@ from app.schemas import OutputResponse
 
 
 # Model registry: maps user selection to (provider, model_id)
-# OpenAI: general purpose; Google DeepMind (Gemini): deep research topics
+# Only verified working chat models
 MODEL_REGISTRY = {
-    "openai-gpt4": ("openai", "gpt-4o"),
-    "openai-gpt4o": ("openai", "gpt-4o"),
-    "openai-gpt35": ("openai", "gpt-3.5-turbo"),
-    "openai-gpt35-turbo": ("openai", "gpt-3.5-turbo"),
-    "google-gemini-pro": ("google", "gemini-1.5-pro"),
-    "google-gemini-flash": ("google", "gemini-1.5-flash"),
-    "google-gemini-25-flash": ("google", "gemini-2.5-flash"),
+    # OpenAI GPT-5.2 Chat Latest (newest verified chat model)
+    "chatgpt-latest": ("openai", "gpt-5.2-chat-latest"),
+    # Google Gemini 2.5 Flash (fast, high rate limits)
+    "google-gemini-flash": ("google", "gemini-2.5-flash"),
 }
 
 
@@ -26,23 +23,28 @@ async def call_openai(prompt: str, model_id: str, api_key: str) -> str:
     from openai import AsyncOpenAI
 
     client = AsyncOpenAI(api_key=api_key)
-    response = await client.chat.completions.create(
-        model=model_id,
-        messages=[
+    
+    # Some models (like gpt-5.2-chat-latest) don't support temperature parameter
+    kwargs = {
+        "model": model_id,
+        "messages": [
             {
                 "role": "system",
                 "content": "You are a business analyst. Respond only with valid JSON, no markdown or code blocks.",
             },
             {"role": "user", "content": prompt},
         ],
-        temperature=0.7,
-    )
+    }
+    if "gpt-5.2" not in model_id and "chat-latest" not in model_id:
+        kwargs["temperature"] = 0.7
+    
+    response = await client.chat.completions.create(**kwargs)
     return response.choices[0].message.content or ""
 
 
 async def call_google_deepmind(prompt: str, model_id: str, api_key: str) -> str:
-    """Call Google DeepMind (Gemini) API for deep research topics."""
-    from google import genai
+    """Call Google DeepMind (Gemini) API for deep research topics via REST."""
+    import httpx
 
     system_instruction = (
         "You are a business analyst specializing in deep research. "
@@ -50,15 +52,29 @@ async def call_google_deepmind(prompt: str, model_id: str, api_key: str) -> str:
     )
     full_prompt = f"{system_instruction}\n\n{prompt}"
 
-    def _generate():
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=model_id,
-            contents=full_prompt,
-        )
-        return response.text if response.text else ""
+    url = f"https://generativelanguage.googleapis.com/v1/models/{model_id}:generateContent"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": full_prompt}]}],
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096},
+    }
 
-    return await asyncio.to_thread(_generate)
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            url, headers=headers, json=payload, params={"key": api_key}
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extract text from response
+        if "candidates" in data and len(data["candidates"]) > 0:
+            candidate = data["candidates"][0]
+            if "content" in candidate and "parts" in candidate["content"]:
+                parts = candidate["content"]["parts"]
+                if len(parts) > 0 and "text" in parts[0]:
+                    return parts[0]["text"]
+        
+        return ""
 
 
 def extract_json_from_response(text: str) -> dict[str, Any]:
@@ -83,17 +99,19 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
     competing_players = []
     for item in raw.get("competing_players", []):
         if isinstance(item, str):
-            competing_players.append({"name": item, "description": None, "strengths": None})
+            competing_players.append({"name": item, "description": None, "location": None, "url": None, "strengths": None})
         elif isinstance(item, dict):
             competing_players.append(
                 {
                     "name": item.get("name", "Unknown"),
                     "description": item.get("description"),
+                    "location": item.get("location"),
+                    "url": item.get("url") or item.get("website"),
                     "strengths": item.get("strengths"),
                 }
             )
         else:
-            competing_players.append({"name": str(item), "description": None, "strengths": None})
+            competing_players.append({"name": str(item), "description": None, "location": None, "url": None, "strengths": None})
 
     # Limit to max 5
     competing_players = competing_players[:5]

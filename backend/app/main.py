@@ -53,7 +53,7 @@ async def analyze_business(input_data: BusinessInput) -> OutputResponse:
             openai_api_key=openai_key,
             google_api_key=google_key,
         )
-        return result
+        return result.model_copy(update={"prompt": prompt})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
