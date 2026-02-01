@@ -11,7 +11,7 @@ const API_BASE_URL = '/api'
  */
 export async function analyzeBusiness(formData) {
   const payload = {
-    business_name: formData.businessName,
+    business_name: formData.businessName || 'My Business',
     location_city: formData.city,
     country: formData.country,
     target_audience: formData.targetAudience || null,
@@ -20,6 +20,13 @@ export async function analyzeBusiness(formData) {
     raw_idea: formData.rawIdea,
     problem: formData.problem || null,
     model_selection: formData.model,
+    time_commitment: formData.timeCommitment || null,
+    output_tone: formData.outputTone || null,
+    language: formData.language || null,
+    stage_of_idea: formData.stageOfIdea || null,
+    time_horizon: formData.timeHorizon || null,
+    file_content: formData.file_content || null,
+    photos_description: formData.photos_description || null,
   }
 
   const response = await fetch(`${API_BASE_URL}/analyze`, {

@@ -1,4 +1,4 @@
-#!/Users/sonalig/Desktop/cursor-ai-hackathon-raw2ready/backend/venv/bin/python3.12
+#!/Users/rishitank/Desktop/cursor-ai-hackathon-raw2ready/backend/venv/bin/python3.13
 
 ##############################################################################
 #

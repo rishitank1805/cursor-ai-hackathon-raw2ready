@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 
 
 class BusinessInput(BaseModel):
-    """Input schema from frontend."""
+    """Input schema from frontend - accepts all form parameters."""
 
     model_config = {"protected_namespaces": ()}
 
-    business_name: str = Field(..., description="Name of the business")
+    business_name: str = Field(..., description="Name of the business (user-provided or placeholder)")
     location_city: str = Field(..., description="City location (required)")
     country: str = Field(..., description="Country (required)")
     target_audience: Optional[str] = Field(None, description="Target audience (optional)")
@@ -27,8 +27,14 @@ class BusinessInput(BaseModel):
     )
     model_selection: str = Field(
         ...,
-        description="Model to use: openai-gpt4, openai-gpt35, google-gemini-pro, google-gemini-flash",
+        description="Model to use: chatgpt-latest, google-gemini-flash",
     )
+    # Additional frontend form parameters (all optional)
+    time_commitment: Optional[str] = Field(None, description="Part-time or full-time commitment")
+    output_tone: Optional[str] = Field(None, description="Output tone: professional, casual, etc.")
+    language: Optional[str] = Field(None, description="Preferred language")
+    stage_of_idea: Optional[str] = Field(None, description="Stage: concept, validation, development, launch, growth")
+    time_horizon: Optional[str] = Field(None, description="Vision time horizon: 3-4 months, 1-3 years, etc.")
 
 
 class CompetingPlayer(BaseModel):
@@ -53,6 +59,10 @@ class OutputResponse(BaseModel):
     disclaimer: Optional[str] = Field(
         None,
         description="Important notice about data accuracy and verification",
+    )
+    suggested_business_name: Optional[str] = Field(
+        None,
+        description="AI-suggested unique business name; used as presentation title",
     )
     competing_players: list[CompetingPlayer] = Field(
         ...,

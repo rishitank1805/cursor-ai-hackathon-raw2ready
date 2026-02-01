@@ -217,7 +217,10 @@ const PresentationPage = () => {
       localStorage.setItem('raw2ready_presentation', JSON.stringify(data))
       localStorage.setItem('raw2ready_currentSlide', '0')
     } catch (err) {
-      setPptError(err.message)
+      const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
+      setPptError(isNetworkError
+        ? 'Could not reach the server. Make sure the backend is running (port 8000) and you are using the dev server (npm run dev).'
+        : err.message)
     } finally {
       setIsPptLoading(false)
     }
@@ -249,7 +252,10 @@ const PresentationPage = () => {
       // Save updated presentation to localStorage
       localStorage.setItem('raw2ready_presentation', JSON.stringify(data))
     } catch (err) {
-      setPptError(err.message)
+      const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
+      setPptError(isNetworkError
+        ? 'Could not reach the server. Make sure the backend is running (port 8000).'
+        : err.message)
     } finally {
       setIsEditing(false)
     }
@@ -290,7 +296,10 @@ const PresentationPage = () => {
       window.URL.revokeObjectURL(url)
       a.remove()
     } catch (err) {
-      setPptError(err.message)
+      const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
+      setPptError(isNetworkError
+        ? 'Could not reach the server. Make sure the backend is running (port 8000).'
+        : err.message)
     } finally {
       setIsDownloading(false)
     }
@@ -312,8 +321,8 @@ const PresentationPage = () => {
     const newErrors = {}
     if (!videoFormData.timeRequired.trim()) {
       newErrors.timeRequired = 'Time required is mandatory'
-    } else if (isNaN(videoFormData.timeRequired) || parseFloat(videoFormData.timeRequired) <= 0) {
-      newErrors.timeRequired = 'Please enter a valid time in minutes'
+    } else if (isNaN(videoFormData.timeRequired) || parseFloat(videoFormData.timeRequired) < 30 || parseFloat(videoFormData.timeRequired) > 90) {
+      newErrors.timeRequired = 'Please enter a valid time in seconds (30–90)'
     }
     if (!videoFormData.prompt.trim()) {
       newErrors.prompt = 'Video prompt is required'
@@ -333,7 +342,7 @@ const PresentationPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          time: parseFloat(videoFormData.timeRequired),
+          time: parseFloat(videoFormData.timeRequired) / 60,
           prompt: videoFormData.prompt.trim(),
           business_name: businessContext?.business_name?.trim() || null,
           raw_idea: businessContext?.raw_idea?.trim() || null,
@@ -352,7 +361,10 @@ const PresentationPage = () => {
       // Save generated video info to localStorage
       localStorage.setItem('raw2ready_generatedVideo', JSON.stringify(data))
     } catch (err) {
-      setVideoError(err.message)
+      const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
+      setVideoError(isNetworkError
+        ? 'Could not reach the server. Make sure the backend is running (port 8000) and you are using the dev server (npm run dev).'
+        : err.message)
     } finally {
       setIsVideoLoading(false)
     }
@@ -521,7 +533,7 @@ const PresentationPage = () => {
             <form onSubmit={handleGenerateVideo} className="generation-form">
               <div className="form-group">
                 <label htmlFor="videoTimeRequired">
-                  Time Required (minutes) <span className="required">*</span>
+                  Duration (seconds) <span className="required">*</span>
                 </label>
                 <input
                   type="number"
@@ -529,9 +541,10 @@ const PresentationPage = () => {
                   name="timeRequired"
                   value={videoFormData.timeRequired}
                   onChange={handleVideoChange}
-                  placeholder="Enter time in minutes (e.g., 5)"
-                  min="1"
-                  step="0.5"
+                  placeholder="Enter duration in seconds (30–90)"
+                  min="30"
+                  max="90"
+                  step="1"
                   className={`form-input ${videoErrors.timeRequired ? 'error' : ''}`}
                 />
                 {videoErrors.timeRequired && (

@@ -107,6 +107,19 @@ class TestNormalizeResponse:
         result = normalize_response(raw)
         assert result.market_cap_or_target_revenue == "1500000"
 
+    def test_normalize_includes_suggested_business_name(self):
+        """Extract suggested_business_name when present."""
+        raw = {
+            "suggested_business_name": "Brew & Co Mumbai",
+            "competing_players": [],
+            "market_cap_or_target_revenue": "x",
+            "major_vicinity_locations": [],
+            "target_audience": [],
+            "undiscovered_addons": [],
+        }
+        result = normalize_response(raw)
+        assert result.suggested_business_name == "Brew & Co Mumbai"
+
     def test_normalize_string_audience_to_list(self):
         """Convert string target_audience to list."""
         raw = {

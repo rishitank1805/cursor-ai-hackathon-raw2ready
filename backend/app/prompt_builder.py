@@ -68,6 +68,17 @@ If you cannot confidently answer YES to all these questions, DO NOT include that
     if input_data.business_type:
         additional_context.append(f"Business type: {input_data.business_type}")
     
+    if getattr(input_data, "time_commitment", None):
+        additional_context.append(f"Time commitment: {input_data.time_commitment}")
+    if getattr(input_data, "output_tone", None):
+        additional_context.append(f"Output tone: {input_data.output_tone}")
+    if getattr(input_data, "language", None):
+        additional_context.append(f"Language: {input_data.language}")
+    if getattr(input_data, "stage_of_idea", None):
+        additional_context.append(f"Stage of idea: {input_data.stage_of_idea}")
+    if getattr(input_data, "time_horizon", None):
+        additional_context.append(f"Time horizon: {input_data.time_horizon}")
+    
     if file_content:
         additional_context.append(f"Additional context from file: {file_content}")
     
@@ -77,12 +88,19 @@ If you cannot confidently answer YES to all these questions, DO NOT include that
     if additional_context:
         prompt += "\n\nAdditional information:\n" + "\n".join(f"- {ctx}" for ctx in additional_context)
 
+    # Ask for a unique suggested business name
+    prompt += """
+
+Based on ALL the information above (business idea, location, target audience, tone, stage, etc.), suggest ONE unique, memorable business name that fits the concept. The name should be distinctive, brandable, and suitable for the location and idea. Include this in your JSON as "suggested_business_name".
+"""
+
     # Output format instructions
     prompt += f"""
 
 You MUST respond with a valid JSON object (no markdown, no code blocks) with exactly this structure:
 
 {{
+  "suggested_business_name": "Your unique suggested business name (one short, memorable name)",
   "competing_players": [
     {{
       "name": "Real Business Name (must be verifiable)",
@@ -101,6 +119,7 @@ You MUST respond with a valid JSON object (no markdown, no code blocks) with exa
 }}
 
 CRITICAL INSTRUCTIONS:
+0. suggested_business_name: ONE unique, memorable business name based on the idea, location, audience, and tone. Make it distinctive and brandable (e.g. "Brew & Co Mumbai", "Spice Route Delhi"). This will be used as the presentation title.
 1. competing_players: 
    - ONLY include REAL, currently operating businesses in {input_data.location_city}
    - Verify the business actually exists before including it

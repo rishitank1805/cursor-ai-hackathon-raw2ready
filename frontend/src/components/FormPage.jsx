@@ -4,7 +4,8 @@ import { countries } from '../utils/countries'
 import { analyzeBusiness } from '../services/api'
 import './FormPage.css'
 
-const API_BASE_URL = 'http://localhost:8000'
+// Use relative URL so Vite proxy (dev) or same-origin (prod) forwards to backend
+const API_BASE_URL = ''
 
 const FormPage = () => {
   const navigate = useNavigate()
@@ -208,6 +209,11 @@ const FormPage = () => {
         file_content: fileContent || null,
         photos_description: null,
         model_selection: getModelSelection(),
+        time_commitment: formData.timeCommitment || null,
+        output_tone: formData.outputTone || null,
+        language: formData.language || null,
+        stage_of_idea: formData.stageOfIdea || null,
+        time_horizon: formData.timeHorizon || null,
       }
 
       const response = await fetch(`${API_BASE_URL}/api/analyze`, {
@@ -223,8 +229,11 @@ const FormPage = () => {
 
       const analysisData = await response.json()
 
+      // Use AI-suggested business name for presentation title when available
+      const businessNameForPresentation = analysisData.suggested_business_name?.trim() || formData.businessName.trim() || 'My Business'
+
       const businessContext = {
-        business_name: formData.businessName.trim() || 'My Business',
+        business_name: businessNameForPresentation,
         raw_idea: formData.rawIdea.trim(),
         problem: formData.problem.trim() || null,
         target_audience: formData.targetAudience.trim() || null,
@@ -241,7 +250,11 @@ const FormPage = () => {
         },
       })
     } catch (err) {
-      setApiError(err.message || 'Research failed. Please try again.')
+      const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
+      const message = isNetworkError
+        ? 'Could not reach the server. Make sure the backend is running (e.g. uvicorn on port 8000) and you are using the dev server (npm run dev).'
+        : (err.message || 'Research failed. Please try again.')
+      setApiError(message)
     } finally {
       setIsLoading(false)
     }

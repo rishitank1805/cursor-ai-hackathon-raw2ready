@@ -160,7 +160,14 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
     if isinstance(addons, str):
         addons = [addons]
 
+    suggested_name = raw.get("suggested_business_name")
+    if suggested_name and not isinstance(suggested_name, str):
+        suggested_name = str(suggested_name).strip() or None
+    elif suggested_name:
+        suggested_name = suggested_name.strip() or None
+
     return OutputResponse(
+        suggested_business_name=suggested_name,
         competing_players=competing_players,
         market_cap_or_target_revenue=market_cap,
         major_vicinity_locations=vicinity,
@@ -423,8 +430,10 @@ Suggested Time Per Slide: ~{seconds_per_slide} seconds
 === OUTPUT FORMAT ===
 You MUST respond with a valid JSON object (no markdown, no code blocks) with exactly this structure:
 
+Use the given Business Name as the main title of the presentation. The presentation_title MUST feature the business name (e.g. "Brew & Co Mumbai" or "Brew & Co Mumbai – Premium Coffee Experience").
+
 {{
-  "presentation_title": "Catchy main title for the deck",
+  "presentation_title": "The business name plus optional tagline (e.g. Brew & Co Mumbai – Premium Coffee Experience)",
   "generated_tagline": "A memorable one-line tagline (e.g. Hamburg's Premier Global Coffee Experience)",
   "total_duration_minutes": {duration_minutes},
   "slides": [
