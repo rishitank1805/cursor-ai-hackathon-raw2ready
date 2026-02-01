@@ -321,8 +321,8 @@ const PresentationPage = () => {
     const newErrors = {}
     if (!videoFormData.timeRequired.trim()) {
       newErrors.timeRequired = 'Time required is mandatory'
-    } else if (isNaN(videoFormData.timeRequired) || parseFloat(videoFormData.timeRequired) < 30 || parseFloat(videoFormData.timeRequired) > 90) {
-      newErrors.timeRequired = 'Please enter a valid time in seconds (30–90)'
+    } else if (isNaN(videoFormData.timeRequired) || parseFloat(videoFormData.timeRequired) < 6 || parseFloat(videoFormData.timeRequired) > 10) {
+      newErrors.timeRequired = 'Please enter a valid time in seconds (6–10)'
     }
     if (!videoFormData.prompt.trim()) {
       newErrors.prompt = 'Video prompt is required'
@@ -541,9 +541,9 @@ const PresentationPage = () => {
                   name="timeRequired"
                   value={videoFormData.timeRequired}
                   onChange={handleVideoChange}
-                  placeholder="Enter duration in seconds (30–90)"
-                  min="30"
-                  max="90"
+                  placeholder="Enter duration in seconds (6–10)"
+                  min="6"
+                  max="10"
                   step="1"
                   className={`form-input ${videoErrors.timeRequired ? 'error' : ''}`}
                 />
