@@ -66,24 +66,12 @@ const ResultsPage = () => {
         <button onClick={handleBack} className="back-button">
           ← Back
         </button>
-        <h1 className="results-title">Your Business Analysis</h1>
+        <h1 className="results-title">
+          {data.suggested_business_name 
+            ? `Your Business: "${data.suggested_business_name}"`
+            : 'Your Business Analysis'}
+        </h1>
         <p className="results-subtitle">Here's your comprehensive business proposal breakdown</p>
-
-        {/* Suggested business name - used as presentation title */}
-        {data.suggested_business_name && (
-          <div className="suggested-name-banner">
-            <span className="suggested-name-label">Suggested business name (presentation title):</span>
-            <strong className="suggested-name-value">{data.suggested_business_name}</strong>
-          </div>
-        )}
-
-        {/* Disclaimer if present */}
-        {data.disclaimer && (
-          <div className="disclaimer-banner">
-            <span className="disclaimer-icon">⚠️</span>
-            <p className="disclaimer-text">{data.disclaimer}</p>
-          </div>
-        )}
 
         {/* Your Idea/Pitch Section */}
         <div className="section-container">
