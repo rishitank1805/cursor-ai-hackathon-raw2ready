@@ -54,7 +54,7 @@ const ResultsPage = () => {
   }
 
   const handleBack = () => {
-    navigate('/form')
+    navigate('/form', { state: { analysisData: data, businessContext } })
   }
 
   return (
@@ -152,7 +152,8 @@ const ResultsPage = () => {
                   competing_players: data?.competing_players || [],
                   market_cap_or_target_revenue: data?.market_cap_or_target_revenue || '',
                   undiscovered_addons: data?.undiscovered_addons || [],
-                }
+                },
+                analysisData: data,
               } 
             })}
           >

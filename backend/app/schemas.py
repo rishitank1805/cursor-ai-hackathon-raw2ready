@@ -170,3 +170,16 @@ class VideoGenerateResponse(BaseModel):
     video_url: Optional[str] = Field(None, description="Download or play URL when status is Success")
     duration_used_seconds: int = Field(..., description="Actual clip length used (6 or 10) due to API limits")
     error_message: Optional[str] = Field(None, description="Error message when status is Fail")
+
+
+class VideoGenerateSimpleInput(BaseModel):
+    """Input for video generation from frontend card. User prompt + optional business details from form."""
+
+    time: float = Field(..., ge=0.5, le=15, description="Time required in minutes (e.g. 5)")
+    prompt: str = Field(..., min_length=1, description="User prompt describing what the video should show")
+    business_name: Optional[str] = Field(None, description="Business name from form")
+    raw_idea: Optional[str] = Field(None, description="Raw business idea from form")
+    problem: Optional[str] = Field(None, description="Problem being solved from form")
+    target_audience: Optional[str] = Field(None, description="Target audience from form")
+    location_city: Optional[str] = Field(None, description="City from form")
+    country: Optional[str] = Field(None, description="Country from form")

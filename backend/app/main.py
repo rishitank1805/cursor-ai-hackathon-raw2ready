@@ -17,6 +17,7 @@ from app.schemas import (
     ExportPptxRequest,
     VideoGenerateInput,
     VideoGenerateResponse,
+    VideoGenerateSimpleInput,
 )
 
 app = FastAPI(
@@ -200,11 +201,96 @@ def _sanitize_filename(title: str) -> str:
     return safe.strip() or "presentation"
 
 
+def _video_duration_seconds_from_minutes(time_minutes: float) -> int:
+    """Map time in minutes to duration_seconds (30–90) for MiniMax."""
+    sec = int(round(time_minutes * 60))
+    return max(30, min(90, sec))
+
+
+def _topic_from_prompt_and_business(
+    prompt: str,
+    business_name: str | None = None,
+    raw_idea: str | None = None,
+    problem: str | None = None,
+    target_audience: str | None = None,
+    location_city: str | None = None,
+    country: str | None = None,
+) -> str:
+    """Build a topic string from user prompt + optional business context for MiniMax."""
+    user_prompt = (prompt or "").strip()
+    if not user_prompt:
+        user_prompt = "Professional business demo video. Cinematic, modern, engaging."
+    parts = []
+    if business_name and business_name.strip():
+        parts.append(f"Business: {business_name.strip()}.")
+    if raw_idea and raw_idea.strip():
+        parts.append(f"Idea: {raw_idea.strip()}")
+    if problem and problem.strip():
+        parts.append(f"Problem: {problem.strip()}")
+    if target_audience and target_audience.strip():
+        parts.append(f"Target audience: {target_audience.strip()}")
+    if location_city and country and (location_city.strip() or country.strip()):
+        loc = ", ".join(filter(None, [location_city.strip(), country.strip()]))
+        parts.append(f"Location: {loc}")
+    elif country and country.strip():
+        parts.append(f"Location: {country.strip()}")
+    if parts:
+        topic = " ".join(parts) + " " + user_prompt + ". Cinematic, modern, professional."
+    else:
+        topic = user_prompt + ". Cinematic, modern, professional."
+    return topic[:2000]
+
+
+@app.post("/api/generate-video", response_model=VideoGenerateResponse)
+async def create_video_simple(input_data: VideoGenerateSimpleInput) -> VideoGenerateResponse:
+    """
+    Generate a demo video (frontend card flow). Uses business details from first-page form when provided.
+    """
+    minimax_key = settings.minimax_api_key
+    if not minimax_key:
+        raise HTTPException(
+            status_code=400,
+            detail="MiniMax API key not configured. Set MINIMAX_API_KEY in environment.",
+        )
+    duration_seconds = _video_duration_seconds_from_minutes(input_data.time)
+    topic = _topic_from_prompt_and_business(
+        prompt=input_data.prompt,
+        business_name=input_data.business_name,
+        raw_idea=input_data.raw_idea,
+        problem=input_data.problem,
+        target_audience=input_data.target_audience,
+        location_city=input_data.location_city,
+        country=input_data.country,
+    )
+    business_name = (input_data.business_name or "").strip() or None
+    try:
+        result = await generate_demo_video(
+            topic=topic,
+            duration_seconds=duration_seconds,
+            api_key=minimax_key,
+            business_name=business_name,
+            prompt=None,
+        )
+        return VideoGenerateResponse(
+            task_id=result["task_id"],
+            status=result["status"],
+            video_url=result.get("video_url"),
+            duration_used_seconds=result["duration_used_seconds"],
+            error_message=result.get("error_message"),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Video generation failed: {str(e)}",
+        )
+
+
 @app.post("/api/video/generate", response_model=VideoGenerateResponse)
 async def create_demo_video(input_data: VideoGenerateInput) -> VideoGenerateResponse:
     """
-    Generate a demo video from the presentation topic using MiniMax.
-    Duration 30–90 seconds (API produces 6s or 10s clip based on selection).
+    Generate a demo video from topic/prompt (presentation flow). Accepts topic, optional prompt, business_name, duration_seconds 30–90.
     """
     minimax_key = settings.minimax_api_key
     if not minimax_key:

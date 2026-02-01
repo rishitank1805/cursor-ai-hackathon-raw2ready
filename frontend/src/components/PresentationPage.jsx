@@ -68,7 +68,7 @@ const PresentationPage = () => {
     }
     return {
       timeRequired: '',
-      videoType: ''
+      prompt: ''
     }
   }
 
@@ -93,7 +93,20 @@ const PresentationPage = () => {
   const [videoError, setVideoError] = useState(null)
 
   const handleBack = () => {
-    navigate('/results')
+    navigate('/results', {
+      state: {
+        analysisData: location.state?.analysisData,
+        businessContext: location.state?.businessContext || businessContext,
+      },
+    })
+  }
+
+  const handleBackToCardSelection = () => {
+    setPresentation(null)
+    setCurrentSlide(0)
+    setActiveCard(null)
+    localStorage.removeItem('raw2ready_presentation')
+    localStorage.removeItem('raw2ready_currentSlide')
   }
 
   const openCard = (cardType) => {
@@ -302,8 +315,8 @@ const PresentationPage = () => {
     } else if (isNaN(videoFormData.timeRequired) || parseFloat(videoFormData.timeRequired) <= 0) {
       newErrors.timeRequired = 'Please enter a valid time in minutes'
     }
-    if (!videoFormData.videoType.trim()) {
-      newErrors.videoType = 'Video type is mandatory'
+    if (!videoFormData.prompt.trim()) {
+      newErrors.prompt = 'Video prompt is required'
     }
     setVideoErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -321,7 +334,13 @@ const PresentationPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           time: parseFloat(videoFormData.timeRequired),
-          video_type: videoFormData.videoType
+          prompt: videoFormData.prompt.trim(),
+          business_name: businessContext?.business_name?.trim() || null,
+          raw_idea: businessContext?.raw_idea?.trim() || null,
+          problem: businessContext?.problem?.trim() || null,
+          target_audience: businessContext?.target_audience?.trim() || null,
+          location_city: businessContext?.location_city?.trim() || null,
+          country: businessContext?.country?.trim() || null,
         }),
       })
       if (!response.ok) {
@@ -347,7 +366,7 @@ const PresentationPage = () => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `video_${videoFormData.videoType}_${Date.now()}.mp4`
+        link.download = `video_${Date.now()}.mp4`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -521,25 +540,20 @@ const PresentationPage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="videoType">
-                  Type of Video <span className="required">*</span>
+                <label htmlFor="videoPrompt">
+                  Video prompt <span className="required">*</span>
                 </label>
-                <select
-                  id="videoType"
-                  name="videoType"
-                  value={videoFormData.videoType}
+                <textarea
+                  id="videoPrompt"
+                  name="prompt"
+                  value={videoFormData.prompt}
                   onChange={handleVideoChange}
-                  className={`form-input ${videoErrors.videoType ? 'error' : ''}`}
-                >
-                  <option value="">Select video type</option>
-                  <option value="real">Real</option>
-                  <option value="animation">Animation</option>
-                  <option value="virtual-reality">Virtual Reality</option>
-                  <option value="mixed-media">Mixed Media</option>
-                  <option value="whiteboard">Whiteboard Animation</option>
-                </select>
-                {videoErrors.videoType && (
-                  <span className="error-message">{videoErrors.videoType}</span>
+                  placeholder="Describe what you want in the video (e.g. team in office, product demo, customer testimonial, animated explainer)"
+                  rows={3}
+                  className={`form-input ${videoErrors.prompt ? 'error' : ''}`}
+                />
+                {videoErrors.prompt && (
+                  <span className="error-message">{videoErrors.prompt}</span>
                 )}
               </div>
 
@@ -615,8 +629,8 @@ const PresentationPage = () => {
     return (
       <div className="presentation-page">
         <div className="presentation-container">
-          <button onClick={handleBack} className="back-button">
-            ← Back to Results
+          <button onClick={handleBackToCardSelection} className="back-button">
+            ← Back to Presentation or Video
           </button>
           <div className="presentation-viewer">
             <div className="viewer-header">

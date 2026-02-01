@@ -189,9 +189,6 @@ const FormPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) return
-    
-    // Clear saved form data on successful submission
-    localStorage.removeItem('raw2ready_formData')
 
     setIsLoading(true)
     setApiError(null)
@@ -237,10 +234,6 @@ const FormPage = () => {
         business_type: formData.businessType || null,
       }
 
-      // Clear saved form data on successful submission
-      localStorage.removeItem('raw2ready_formData')
-      localStorage.removeItem('raw2ready_termsAccepted')
-      
       navigate('/results', {
         state: {
           analysisData,
