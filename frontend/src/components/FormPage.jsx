@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { countries } from '../utils/countries'
 import { analyzeBusiness } from '../services/api'
@@ -16,8 +16,7 @@ const FormPage = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        // Don't restore file attachments from localStorage
-        return { ...parsed, fileAttachments: [] }
+        return parsed
       } catch (e) {
         console.error('Error loading saved form data:', e)
       }
@@ -31,11 +30,9 @@ const FormPage = () => {
       businessType: '',
       rawIdea: '',
       problem: '',
-      fileAttachments: [],
       model: 'chatgpt-latest',
       timeCommitment: '',
       outputTone: '',
-      language: '',
       stageOfIdea: '',
       timeHorizon: ''
     }
@@ -53,50 +50,18 @@ const FormPage = () => {
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState(null)
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
-  const [filteredCountries, setFilteredCountries] = useState(countries)
-  const fileInputRef = useRef(null)
-  const countryInputRef = useRef(null)
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target
-    if (files) {
-      const fileArray = Array.from(files)
-      setFormData(prev => {
-        const updated = {
-          ...prev,
-          [name]: [...prev[name], ...fileArray]
-        }
-        // Save to localStorage (without files)
-        const { fileAttachments, ...dataToSave } = updated
-        localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
-        return updated
-      })
-      // Clear the input value so it doesn't show the filename
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+    const { name, value } = e.target
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: value
       }
-    } else {
-      setFormData(prev => {
-        const updated = {
-          ...prev,
-          [name]: value
-        }
-        // Save to localStorage (without files)
-        const { fileAttachments, ...dataToSave } = updated
-        localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
-        return updated
-      })
-      
-      // Handle country autocomplete
-      if (name === 'country') {
-        const filtered = countries.filter(country =>
-          country.toLowerCase().includes(value.toLowerCase())
-        )
-        setFilteredCountries(filtered)
-        setShowCountryDropdown(value.length > 0 && filtered.length > 0)
-      }
-    }
+      // Save to localStorage
+      localStorage.setItem('raw2ready_formData', JSON.stringify(updated))
+      return updated
+    })
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -106,56 +71,15 @@ const FormPage = () => {
     }
   }
 
-  const handleCountrySelect = (country) => {
-    setFormData(prev => {
-      const updated = {
-        ...prev,
-        country: country
-      }
-      // Save to localStorage
-      const { fileAttachments, ...dataToSave } = updated
-      localStorage.setItem('raw2ready_formData', JSON.stringify(dataToSave))
-      return updated
-    })
-    setShowCountryDropdown(false)
-    setFilteredCountries(countries)
-  }
-
-  const handleCountryFocus = () => {
-    if (formData.country) {
-      const filtered = countries.filter(country =>
-        country.toLowerCase().includes(formData.country.toLowerCase())
-      )
-      setFilteredCountries(filtered)
-      setShowCountryDropdown(filtered.length > 0)
-    } else {
-      setFilteredCountries(countries)
-      setShowCountryDropdown(true)
-    }
-  }
-
-  const handleCountryBlur = () => {
-    // Delay to allow click on dropdown item
-    setTimeout(() => {
-      setShowCountryDropdown(false)
-    }, 200)
-  }
-
-  const handleRemoveFile = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      fileAttachments: prev.fileAttachments.filter((_, i) => i !== index)
-    }))
-    // Clear the input value when removing files
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
   const validateForm = () => {
     const newErrors = {}
 
-    if (!formData.country.trim()) newErrors.country = 'Country is required'
+    // Country must be selected from dropdown (not empty and must be in countries list)
+    if (!formData.country.trim()) {
+      newErrors.country = 'Country is required'
+    } else if (!countries.includes(formData.country)) {
+      newErrors.country = 'Please select a country from the dropdown'
+    }
     if (!formData.city.trim()) newErrors.city = 'City is required'
     if (!formData.rawIdea.trim()) newErrors.rawIdea = 'Raw idea is required'
     if (!formData.timeCommitment) newErrors.timeCommitment = 'Time commitment is required'
@@ -170,23 +94,6 @@ const FormPage = () => {
     return formData.model === 'gemini' ? 'google-gemini-flash' : 'chatgpt-latest'
   }
 
-  // Read first text file as file_content (optional)
-  const readFileContent = (files) => {
-    if (!files?.length) return Promise.resolve(null)
-    const textExtensions = ['.txt', '.md', '.csv']
-    const textFile = Array.from(files).find(f => {
-      const name = (f.name || '').toLowerCase()
-      return textExtensions.some(ext => name.endsWith(ext))
-    })
-    if (!textFile) return Promise.resolve(null)
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = () => resolve(null)
-      reader.readAsText(textFile)
-    })
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -195,8 +102,6 @@ const FormPage = () => {
     setApiError(null)
 
     try {
-      const fileContent = await readFileContent(formData.fileAttachments)
-
       const requestBody = {
         business_name: formData.businessName.trim() || 'My Business',
         location_city: formData.city.trim() || '',
@@ -206,12 +111,12 @@ const FormPage = () => {
         business_type: formData.businessType || null,
         raw_idea: formData.rawIdea.trim(),
         problem: formData.problem.trim() || null,
-        file_content: fileContent || null,
+        file_content: null,
         photos_description: null,
         model_selection: getModelSelection(),
         time_commitment: formData.timeCommitment || null,
         output_tone: formData.outputTone || null,
-        language: formData.language || null,
+        language: 'en', // Always English
         stage_of_idea: formData.stageOfIdea || null,
         time_horizon: formData.timeHorizon || null,
       }
@@ -275,16 +180,16 @@ const FormPage = () => {
 
         <form onSubmit={handleSubmit} className="business-form">
           <div className="form-grid">
-            {/* Business Name */}
+            {/* What is the business about */}
             <div className="form-group">
-              <label htmlFor="businessName">Business Name</label>
+              <label htmlFor="businessName">What is the business about?</label>
               <input
                 type="text"
                 id="businessName"
                 name="businessName"
                 value={formData.businessName}
                 onChange={handleChange}
-                placeholder="Enter your business name"
+                placeholder="e.g., Coffee shop, Restaurant, Tech startup"
                 className="form-input"
               />
             </div>
@@ -292,40 +197,20 @@ const FormPage = () => {
             {/* Location - Country & City */}
             <div className="form-group">
               <label htmlFor="country">Country <span className="required">*</span></label>
-              <div className="country-input-wrapper">
-                <input
-                  ref={countryInputRef}
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  onFocus={handleCountryFocus}
-                  onBlur={handleCountryBlur}
-                  placeholder="Type to search country..."
-                  className={`form-input ${errors.country ? 'error' : ''}`}
-                  autoComplete="off"
-                />
-                {showCountryDropdown && filteredCountries.length > 0 && (
-                  <div className="country-dropdown">
-                    {filteredCountries.slice(0, 10).map((country, index) => (
-                      <div
-                        key={index}
-                        className="country-dropdown-item"
-                        onClick={() => handleCountrySelect(country)}
-                        onMouseDown={(e) => e.preventDefault()}
-                      >
-                        {country}
-                      </div>
-                    ))}
-                    {filteredCountries.length > 10 && (
-                      <div className="country-dropdown-more">
-                        +{filteredCountries.length - 10} more
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <select
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                className={`form-input ${errors.country ? 'error' : ''}`}
+              >
+                <option value="">Select a country</option>
+                {countries.map((country, index) => (
+                  <option key={index} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
               {errors.country && <span className="error-message">{errors.country}</span>}
             </div>
 
@@ -418,39 +303,6 @@ const FormPage = () => {
               />
             </div>
 
-            {/* File Attachments */}
-            <div className="form-group full-width">
-              <label htmlFor="fileAttachments">File Attachments</label>
-              <div className="file-input-wrapper">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  id="fileAttachments"
-                  name="fileAttachments"
-                  onChange={handleChange}
-                  className="form-input file-input"
-                  accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
-                  multiple
-                />
-              </div>
-              {formData.fileAttachments.length > 0 && (
-                <div className="file-list">
-                  {formData.fileAttachments.map((file, index) => (
-                    <div key={index} className="file-item">
-                      <span className="file-name">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFile(index)}
-                        className="remove-file-btn"
-                        aria-label="Remove file"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Model */}
             <div className="form-group">
@@ -501,24 +353,6 @@ const FormPage = () => {
                 <option value="casual">Casual</option>
                 <option value="friendly">Friendly</option>
                 <option value="formal">Formal</option>
-              </select>
-            </div>
-
-            {/* Language */}
-            <div className="form-group">
-              <label htmlFor="language">Language</label>
-              <select
-                id="language"
-                name="language"
-                value={formData.language}
-                onChange={handleChange}
-                className="form-input"
-              >
-                <option value="">Select language</option>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
               </select>
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './PresentationPage.css'
 
@@ -12,6 +12,10 @@ const PresentationPage = () => {
   
   // State for which card is clicked
   const [activeCard, setActiveCard] = useState(null) // 'ppt' or 'video'
+  
+  // AbortController refs for canceling requests
+  const pptAbortControllerRef = useRef(null)
+  const videoAbortControllerRef = useRef(null)
   
   // Load saved PPT form data from localStorage
   const loadSavedPptData = () => {
@@ -141,6 +145,18 @@ const PresentationPage = () => {
   }
 
   const closeCard = () => {
+    // Cancel any ongoing requests
+    if (pptAbortControllerRef.current) {
+      pptAbortControllerRef.current.abort()
+      pptAbortControllerRef.current = null
+      setIsPptLoading(false)
+    }
+    if (videoAbortControllerRef.current) {
+      videoAbortControllerRef.current.abort()
+      videoAbortControllerRef.current = null
+      setIsVideoLoading(false)
+    }
+    
     // Don't clear form data when closing - preserve state
     setActiveCard(null)
     setPptError(null)
@@ -181,6 +197,16 @@ const PresentationPage = () => {
   const handleCreatePresentation = async (e) => {
     e.preventDefault()
     if (!validatePptForm()) return
+    
+    // Cancel any previous request
+    if (pptAbortControllerRef.current) {
+      pptAbortControllerRef.current.abort()
+    }
+    
+    // Create new AbortController
+    const abortController = new AbortController()
+    pptAbortControllerRef.current = abortController
+    
     setIsPptLoading(true)
     setPptError(null)
     // Don't clear form data - keep it for potential regeneration
@@ -205,24 +231,50 @@ const PresentationPage = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
+        signal: abortController.signal,
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to generate presentation')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to generate presentation'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
+      
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        return
+      }
+      
       setPresentation(data)
       setCurrentSlide(0)
       // Save presentation to localStorage
       localStorage.setItem('raw2ready_presentation', JSON.stringify(data))
       localStorage.setItem('raw2ready_currentSlide', '0')
+      pptAbortControllerRef.current = null
     } catch (err) {
+      // Ignore abort errors
+      if (err.name === 'AbortError' || abortController.signal.aborted) {
+        return
+      }
       const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
       setPptError(isNetworkError
         ? 'Could not reach the server. Make sure the backend is running (port 8000) and you are using the dev server (npm run dev).'
         : err.message)
     } finally {
-      setIsPptLoading(false)
+      if (!abortController.signal.aborted) {
+        setIsPptLoading(false)
+      }
+      pptAbortControllerRef.current = null
     }
   }
 
@@ -244,7 +296,18 @@ const PresentationPage = () => {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to edit presentation')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to edit presentation'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
       setPresentation(data)
@@ -334,6 +397,16 @@ const PresentationPage = () => {
   const handleGenerateVideo = async (e) => {
     e.preventDefault()
     if (!validateVideoForm()) return
+    
+    // Cancel any previous request
+    if (videoAbortControllerRef.current) {
+      videoAbortControllerRef.current.abort()
+    }
+    
+    // Create new AbortController
+    const abortController = new AbortController()
+    videoAbortControllerRef.current = abortController
+    
     setIsVideoLoading(true)
     setVideoError(null)
     // Don't clear generatedVideo immediately - keep previous if exists
@@ -351,22 +424,49 @@ const PresentationPage = () => {
           location_city: businessContext?.location_city?.trim() || null,
           country: businessContext?.country?.trim() || null,
         }),
+        signal: abortController.signal,
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to generate video')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to generate video'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          // Validation errors from FastAPI
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
+      
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        return
+      }
+      
       setGeneratedVideo(data)
       // Save generated video info to localStorage
       localStorage.setItem('raw2ready_generatedVideo', JSON.stringify(data))
+      videoAbortControllerRef.current = null
     } catch (err) {
+      // Ignore abort errors
+      if (err.name === 'AbortError' || abortController.signal.aborted) {
+        return
+      }
       const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError'
       setVideoError(isNetworkError
         ? 'Could not reach the server. Make sure the backend is running (port 8000) and you are using the dev server (npm run dev).'
         : err.message)
     } finally {
-      setIsVideoLoading(false)
+      if (!abortController.signal.aborted) {
+        setIsVideoLoading(false)
+      }
+      videoAbortControllerRef.current = null
     }
   }
 

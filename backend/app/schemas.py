@@ -177,10 +177,10 @@ class VideoGenerateInput(BaseModel):
     prompt: Optional[str] = Field(None, description="Custom video prompt from user; when provided, used as main input for the video")
     business_name: Optional[str] = Field(None, description="Business name for context")
     duration_seconds: int = Field(
-        default=60,
-        ge=30,
-        le=90,
-        description="Requested duration in seconds (30–90). API uses 6s or 10s per clip.",
+        default=6,
+        ge=6,
+        le=10,
+        description="Requested duration in seconds (6–10).",
     )
 
 
@@ -197,7 +197,7 @@ class VideoGenerateResponse(BaseModel):
 class VideoGenerateSimpleInput(BaseModel):
     """Input for video generation from frontend card. User prompt + optional business details from form."""
 
-    time: float = Field(..., ge=0.5, le=15, description="Time required in minutes (e.g. 5)")
+    time: float = Field(..., ge=0.1, le=0.2, description="Time required in minutes (0.1–0.17 = 6–10 seconds)")
     prompt: str = Field(..., min_length=1, description="User prompt describing what the video should show")
     business_name: Optional[str] = Field(None, description="Business name from form")
     raw_idea: Optional[str] = Field(None, description="Raw business idea from form")

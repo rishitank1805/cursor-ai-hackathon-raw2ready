@@ -67,15 +67,8 @@ async def analyze_business(input_data: BusinessInput) -> OutputResponse:
             temperature=settings.temperature,
         )
         
-        # Add disclaimer about AI-generated data
-        disclaimer = (
-            "⚠️ IMPORTANT: This analysis is AI-generated based on the model's training data. "
-            "Business information may be outdated or inaccurate. Please verify all competitor "
-            "details independently through web searches, Google Maps, or direct contact before "
-            "making business decisions."
-        )
-        
-        return result.model_copy(update={"prompt": prompt, "disclaimer": disclaimer})
+        # Return result without disclaimer (removed per user request)
+        return result.model_copy(update={"prompt": prompt})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -202,9 +195,9 @@ def _sanitize_filename(title: str) -> str:
 
 
 def _video_duration_seconds_from_minutes(time_minutes: float) -> int:
-    """Map time in minutes to duration_seconds (30–90) for MiniMax."""
+    """Map time in minutes to duration_seconds (6–10) for MiniMax."""
     sec = int(round(time_minutes * 60))
-    return max(30, min(90, sec))
+    return max(6, min(10, sec))
 
 
 def _topic_from_prompt_and_business(
@@ -290,7 +283,7 @@ async def create_video_simple(input_data: VideoGenerateSimpleInput) -> VideoGene
 @app.post("/api/video/generate", response_model=VideoGenerateResponse)
 async def create_demo_video(input_data: VideoGenerateInput) -> VideoGenerateResponse:
     """
-    Generate a demo video from topic/prompt (presentation flow). Accepts topic, optional prompt, business_name, duration_seconds 30–90.
+    Generate a demo video from topic/prompt (presentation flow). Accepts topic, optional prompt, business_name, duration_seconds 6–10.
     """
     minimax_key = settings.minimax_api_key
     if not minimax_key:
