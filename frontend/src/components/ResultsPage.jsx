@@ -149,6 +149,39 @@ const ResultsPage = () => {
           </div>
         </div>
 
+        {/* Timeline Section - shown when timeline data is available */}
+        {data.timeline && data.timeline.length > 0 && (
+          <div className="section-container">
+            <h2 className="section-title">Timeline & Milestones</h2>
+            <div className="timeline-wrapper">
+              <div className="timeline-line"></div>
+              {data.timeline.map((milestone, index) => (
+                <div 
+                  key={index} 
+                  className={`timeline-item ${index % 2 === 0 ? 'left' : 'right'}`}
+                  onClick={() => openCard(`timeline-${index}`)}
+                >
+                  <div className="timeline-node">
+                    <span className="node-number">{index + 1}</span>
+                  </div>
+                  <div className="timeline-content">
+                    <div className="timeline-period">{milestone.period}</div>
+                    <div className="timeline-title">{milestone.title}</div>
+                    <div className="timeline-preview">
+                      {milestone.tasks.slice(0, 2).map((task, tIdx) => (
+                        <span key={tIdx} className="preview-task">• {task}</span>
+                      ))}
+                      {milestone.tasks.length > 2 && (
+                        <span className="more-tasks">+{milestone.tasks.length - 2} more</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Next Button */}
         <div className="next-button-container">
           <button 
@@ -279,6 +312,26 @@ const ResultsPage = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                </>
+              )
+            })()}
+
+            {expandedCard?.startsWith('timeline-') && (() => {
+              const milestone = data.timeline[parseInt(expandedCard.split('-')[1])]
+              return (
+                <>
+                  <div className="card-header">
+                    <h2 className="card-title">{milestone.period}</h2>
+                    <p className="timeline-modal-subtitle">{milestone.title}</p>
+                  </div>
+                  <div className="card-content">
+                    <h3 className="tasks-heading">Key Tasks & Goals:</h3>
+                    <ul className="timeline-tasks-list">
+                      {milestone.tasks.map((task, tIndex) => (
+                        <li key={tIndex} className="timeline-task-item">{task}</li>
+                      ))}
+                    </ul>
                   </div>
                 </>
               )

@@ -49,6 +49,14 @@ class CompetingPlayer(BaseModel):
     year_established: Optional[str] = None
 
 
+class TimelineMilestone(BaseModel):
+    """A milestone in the business timeline."""
+
+    period: str = Field(..., description="Time period (e.g., 'Month 1-2', 'Q1', 'Year 1')")
+    title: str = Field(..., description="Milestone title")
+    tasks: list[str] = Field(..., description="Key tasks or goals for this period")
+
+
 class OutputResponse(BaseModel):
     """Structured output response from the model."""
 
@@ -84,6 +92,10 @@ class OutputResponse(BaseModel):
     undiscovered_addons: list[str] = Field(
         ...,
         description="Add-ons related to the business idea not yet discovered by competitors",
+    )
+    timeline: Optional[list[TimelineMilestone]] = Field(
+        None,
+        description="Timeline with milestones (generated when time_commitment and time_horizon are provided)",
     )
 
 

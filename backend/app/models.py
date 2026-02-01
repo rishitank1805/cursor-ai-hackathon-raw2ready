@@ -166,6 +166,19 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
     elif suggested_name:
         suggested_name = suggested_name.strip() or None
 
+    # Parse timeline if present
+    timeline_data = raw.get("timeline")
+    timeline = None
+    if timeline_data and isinstance(timeline_data, list):
+        timeline = []
+        for item in timeline_data:
+            if isinstance(item, dict):
+                timeline.append({
+                    "period": item.get("period", ""),
+                    "title": item.get("title", ""),
+                    "tasks": item.get("tasks", []) if isinstance(item.get("tasks"), list) else []
+                })
+
     return OutputResponse(
         suggested_business_name=suggested_name,
         competing_players=competing_players,
@@ -173,6 +186,7 @@ def normalize_response(raw: dict[str, Any]) -> OutputResponse:
         major_vicinity_locations=vicinity,
         target_audience=audience,
         undiscovered_addons=addons,
+        timeline=timeline,
     )
 
 

@@ -49,5 +49,53 @@
     "Coffee subscription with home delivery",
     "Barista workshops and tasting sessions",
     "Pet-friendly outdoor seating with treats"
+  ],
+  "suggested_business_name": "Harbor Brew",
+  "timeline": [
+    {
+      "period": "Month 1-2",
+      "title": "Planning & Setup",
+      "tasks": [
+        "Finalize business plan and financial projections",
+        "Secure location and negotiate lease",
+        "Register business and obtain licenses"
+      ]
+    },
+    {
+      "period": "Month 3-4",
+      "title": "Build-Out & Branding",
+      "tasks": [
+        "Complete interior design and renovation",
+        "Develop brand identity and marketing materials",
+        "Source equipment and suppliers"
+      ]
+    },
+    {
+      "period": "Month 5-6",
+      "title": "Pre-Launch",
+      "tasks": [
+        "Hire and train staff",
+        "Conduct soft opening for testing",
+        "Launch marketing campaign"
+      ]
+    },
+    {
+      "period": "Month 7-12",
+      "title": "Launch & Optimize",
+      "tasks": [
+        "Grand opening event",
+        "Gather customer feedback and iterate",
+        "Build loyalty program and community"
+      ]
+    },
+    {
+      "period": "Year 2-3",
+      "title": "Scale & Expand",
+      "tasks": [
+        "Evaluate profitability and optimize operations",
+        "Consider second location or franchise",
+        "Expand product line and services"
+      ]
+    }
   ]
 }

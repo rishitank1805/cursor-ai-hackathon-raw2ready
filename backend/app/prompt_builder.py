@@ -94,6 +94,17 @@ If you cannot confidently answer YES to all these questions, DO NOT include that
 Based on ALL the information above (business idea, location, target audience, tone, stage, etc.), suggest ONE unique, memorable business name that fits the concept. The name should be distinctive, brandable, and suitable for the location and idea. Include this in your JSON as "suggested_business_name".
 """
 
+    # Check if we should generate a timeline
+    has_time_commitment = getattr(input_data, "time_commitment", None)
+    has_time_horizon = getattr(input_data, "time_horizon", None)
+    
+    if has_time_commitment and has_time_horizon:
+        prompt += f"""
+
+TIMELINE GENERATION:
+Since time commitment ({has_time_commitment}) and time horizon ({has_time_horizon}) are provided, create a realistic timeline with milestones at regular intervals. Break down what should be accomplished in each period (e.g., Month 1-2, Q1, Year 1, etc.) based on the time horizon. Include 4-6 milestones covering the full time horizon.
+"""
+
     # Output format instructions
     prompt += f"""
 
@@ -115,8 +126,17 @@ You MUST respond with a valid JSON object (no markdown, no code blocks) with exa
   "market_cap_or_target_revenue": "Estimated market cap or target revenue for this business in the region",
   "major_vicinity_locations": ["Location 1", "Location 2", "Location 3"],
   "target_audience": ["Audience segment 1", "Audience segment 2", "Audience segment 3"],
-  "undiscovered_addons": ["Add-on idea 1", "Add-on idea 2", "Add-on idea 3"]
+  "undiscovered_addons": ["Add-on idea 1", "Add-on idea 2", "Add-on idea 3"],
+  "timeline": [
+    {{
+      "period": "Month 1-2",
+      "title": "Milestone title",
+      "tasks": ["Task 1", "Task 2", "Task 3"]
+    }}
+  ]
 }}
+
+Note: Include "timeline" field ONLY if time_commitment and time_horizon are provided. Otherwise, omit it from the JSON.
 
 CRITICAL INSTRUCTIONS:
 0. suggested_business_name: ONE unique, memorable business name based on the idea, location, audience, and tone. Make it distinctive and brandable (e.g. "Brew & Co Mumbai", "Spice Route Delhi"). This will be used as the presentation title.
@@ -137,6 +157,11 @@ CRITICAL INSTRUCTIONS:
 4. target_audience: Specific audience segments relevant to {input_data.location_city}.
 
 5. undiscovered_addons: Innovative ideas not commonly offered by competitors.
+
+6. timeline (ONLY if time_commitment and time_horizon are provided): Create 4-6 milestones spanning the time horizon. Each milestone should have:
+   - period: Time range (e.g., "Month 1-2", "Q1 2026", "Year 1")
+   - title: Short milestone name (e.g., "Launch MVP", "Scale Operations")
+   - tasks: 3-5 specific, actionable tasks for that period
 
 Respond ONLY with the JSON object, no additional text before or after."""
 
