@@ -235,7 +235,18 @@ const PresentationPage = () => {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to generate presentation')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to generate presentation'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
       
@@ -285,7 +296,18 @@ const PresentationPage = () => {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to edit presentation')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to edit presentation'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
       setPresentation(data)
@@ -406,7 +428,19 @@ const PresentationPage = () => {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to generate video')
+        // Handle different error formats from FastAPI
+        let errorMessage = 'Failed to generate video'
+        if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (Array.isArray(errorData.detail)) {
+          // Validation errors from FastAPI
+          errorMessage = errorData.detail.map(err => err.msg || JSON.stringify(err)).join(', ')
+        } else if (errorData.detail && typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || errorData.detail.msg || JSON.stringify(errorData.detail)
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        throw new Error(errorMessage)
       }
       const data = await response.json()
       

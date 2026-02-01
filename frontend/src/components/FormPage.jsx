@@ -180,16 +180,16 @@ const FormPage = () => {
 
         <form onSubmit={handleSubmit} className="business-form">
           <div className="form-grid">
-            {/* Business Name */}
+            {/* What is the business about */}
             <div className="form-group">
-              <label htmlFor="businessName">Business Name</label>
+              <label htmlFor="businessName">What is the business about?</label>
               <input
                 type="text"
                 id="businessName"
                 name="businessName"
                 value={formData.businessName}
                 onChange={handleChange}
-                placeholder="Enter your business name"
+                placeholder="e.g., Coffee shop, Restaurant, Tech startup"
                 className="form-input"
               />
             </div>
