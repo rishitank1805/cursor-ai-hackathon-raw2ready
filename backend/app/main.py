@@ -67,15 +67,8 @@ async def analyze_business(input_data: BusinessInput) -> OutputResponse:
             temperature=settings.temperature,
         )
         
-        # Add disclaimer about AI-generated data
-        disclaimer = (
-            "⚠️ IMPORTANT: This analysis is AI-generated based on the model's training data. "
-            "Business information may be outdated or inaccurate. Please verify all competitor "
-            "details independently through web searches, Google Maps, or direct contact before "
-            "making business decisions."
-        )
-        
-        return result.model_copy(update={"prompt": prompt, "disclaimer": disclaimer})
+        # Return result without disclaimer (removed per user request)
+        return result.model_copy(update={"prompt": prompt})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
