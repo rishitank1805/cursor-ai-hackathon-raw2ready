@@ -75,10 +75,9 @@ class TestAnalyzeEndpoint:
         """Invalid model selection returns 400."""
         valid_payload["model_selection"] = "invalid-model"
         response = client.post("/api/analyze", json=valid_payload)
-        # Will fail at model query - 400 or 500
-        assert response.status_code in (400, 500)
-        if response.status_code == 400:
-            assert "Unknown model" in response.json().get("detail", "")
+
+        assert response.status_code == 400
+        assert "Unknown model" in response.json().get("detail", "")
 
     def test_analyze_valid_payload_structure(self, client, valid_payload):
         """Valid payload structure is accepted (may fail without API keys)."""
