@@ -1,0 +1,13 @@
+{
+  "business_name": "GreenBite",
+  "location_city": "Berlin",
+  "country": "Germany",
+  "target_audience": "Students and young professionals",
+  "budget": "€20,000",
+  "business_type": "Food and Beverage",
+  "raw_idea": "A healthy grab-and-go meal service near university campuses",
+  "problem": "Students struggle to find affordable and healthy meals quickly",
+  "file_content": "",
+  "photos_description": "",
+  "model_selection": "chatgpt-latest"
+}

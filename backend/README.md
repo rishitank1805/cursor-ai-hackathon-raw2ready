@@ -79,6 +79,21 @@ uvicorn app.main:app --reload --port 8000
 pytest
 ```
 
+## Example Request
+
+```json
+{
+  "business_name": "GreenBite",
+  "location_city": "Berlin",
+  "country": "Germany",
+  "target_audience": "Students and young professionals",
+  "budget": "€20,000",
+  "business_type": "Food and Beverage",
+  "raw_idea": "A healthy grab-and-go meal service near university campuses",
+  "problem": "Students struggle to find affordable and healthy meals quickly",
+  "model_selection": "chatgpt-latest"
+}
+
 ## Sample Output
 
 See `examples/sample_output.json` for the expected response structure.
