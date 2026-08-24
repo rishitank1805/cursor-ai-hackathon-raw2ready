@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { countries } from '../utils/countries'
-import { analyzeBusiness } from '../services/api'
 import './FormPage.css'
 
 // Use relative URL so Vite proxy (dev) or same-origin (prod) forwards to backend
@@ -91,11 +90,12 @@ const FormPage = () => {
 
   // Map form model to backend model ID
   const getModelSelection = () => {
-    return formData.model === 'gemini' ? 'google-gemini-flash' : 'chatgpt-latest'
-  }
+  return formData.model
+}
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isLoading) return
     if (!validateForm()) return
 
     setIsLoading(true)
